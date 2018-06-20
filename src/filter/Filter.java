@@ -18,7 +18,7 @@ public class Filter {
 
 	public static void main(String[] args) throws IOException {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		String input = "img.jpg";	// 入力画像の取得
+		String input = "img.jpg";	// 入力画像
 		
 		OpenCVFFT2D fft = new OpenCVFFT2D(input);
 		Mat F = fft.getMagImg();

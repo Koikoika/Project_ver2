@@ -26,7 +26,7 @@ public class OpenCVFFT2D {
 	Mat img;
 
 	public OpenCVFFT2D(String filename) throws IOException {
-		img = Imgcodecs.imread(filename, Imgcodecs.CV_LOAD_IMAGE_COLOR);// 画像は3チャンネルとして読み込む
+		img = Imgcodecs.imread(filename, Imgcodecs.CV_LOAD_IMAGE_COLOR);// 3チャンネルとして読み込む
 		if (img == null) {
 			throw new RuntimeException("Can't load image.");
 		}

@@ -27,7 +27,7 @@ import org.opencv.imgproc.Imgproc;
 
 public class CreateImage2 {
 	static int width = 360;// 画像サイズ y
-	static int height = 640;// x
+	static int height = 640;// 画像サイズx
 
 	public static  BufferedImage convertMatToBufferedImage(Mat m)
             throws IOException {
