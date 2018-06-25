@@ -58,7 +58,7 @@ public class CreateImage2 {
 		while(count < 474) {
 		// 出力画像（黒い画像に白い点が1点）の作成
 		//1度作成した場合はコメントアウト
-		/*
+		
 		int x = 0, y = 0, w, h;
 		
 			x = Integer.parseInt(scanner.next());
@@ -71,30 +71,40 @@ public class CreateImage2 {
 			if(h%2==0) h = h+1;
 
 			double[] rgb = { 255, 255, 255 };// 読み込んだ座標のみ白にする
-			dst1.put(y, x, rgb);
+			dst1.put(x, y, rgb);
 
-			Imgproc.GaussianBlur(dst1, dst1, new Size(w,h), 2, 2);*/
+			Imgproc.GaussianBlur(dst1, dst1, new Size(w,h), 2, 2);
 
-			String outname = "/Skating2/img_G/" + String.valueOf(count) + ".jpg";// 出力ファイル
-
+			String outname = "img_G/" + String.valueOf(count) + ".jpg";// 出力ファイル
+			dst1 = Mat.zeros(width, height, CvType.CV_64FC1);// 0で初期化
 			
 			// MOSSEフィルター作成
 			
-			String filename = "/Skating2/img/" + String.valueOf(count) + ".jpg";// 入力画像
+			String filename = "img/" + String.valueOf(count) + ".jpg";// 入力画像
 			
 			OpenCVFFT2D fft = new OpenCVFFT2D(filename);   //読み込んだ入力画像のフーリエ変換
 			Mat F = fft.getMagImg();//フーリエ変換後(Mat型)
-			
+			/*System.out.println(F.type());
+			System.out.println(F.height());
+			System.out.println(F.width());*/
 			
 			OpenCVFFT2D fftg = new OpenCVFFT2D(outname);//出力画像のフーリエ変換
 			Mat G = fftg.getMagImg();// 出力画像のフーリエ変換後(Mat型)
+			/*System.out.println(G.type());
+			System.out.println(G.height());
+			System.out.println(G.width());*/
+			
 			
 			Core.mulSpectrums(F,F,Fresult,Core.DFT_COMPLEX_OUTPUT,true);// MOSSEフィルタ作成の式の分母(出力画像のフーリエ変換したMat、その複素共役、出力先、ROW、2番目を複素共役にするか否か)
-			Core.add(result1, Fresult, result1);
+			Core.add(result1, Fresult, result1);//分母
+			Fresult =  Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
 			
 			Core.mulSpectrums(G, F, Gstar,Core.DFT_COMPLEX_OUTPUT,true);//  MOSSEフィルタ作成の式の分子(出力画像のフーリエ変換したMat、その複素共役、出力先、ROW、2番目を複素共役にするか否か
-			Core.add(result2, Gstar, result2);
+			Core.add(result2, Gstar, result2);//分子
+			Gstar =  Mat.zeros(width, height, CvType.CV_64FC2);
 			
+			F = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
+			G = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
 			count++;
 		}
 		
@@ -103,7 +113,7 @@ public class CreateImage2 {
 		System.out.println("実部：" + data2[0]);
 		System.out.println("虚部：" + data2[1]);
 		
-		Core.divide(result1, result2, result);
+		Core.divide(result2, result1, result);
 		
 		String resultfilename = "result1.jpg";//出力ファイル
 		
@@ -119,6 +129,7 @@ public class CreateImage2 {
 		        planes.get(1).put(i,j,data[0]*(-1));
 			}
 		}
+		
 		Core.merge(planes,result);
 		
 		//出力されたフィルタの逆フーリエ変換
@@ -132,13 +143,11 @@ public class CreateImage2 {
 		Imgcodecs.imwrite(resultfilename, restoredImage);
 		
 		//フィルタの表示
-		JFrame resultWin = new JFrame();
+		/*JFrame resultWin = new JFrame();
 		resultWin.getContentPane().add(new JLabel(new ImageIcon(convertMatToBufferedImage(restoredImage))));
 		resultWin.setVisible(true);
-		resultWin.pack();
+		resultWin.pack()*/;
 		
-
-		System.out.println();
 		System.out.println(String.format("done."));
 	}
 

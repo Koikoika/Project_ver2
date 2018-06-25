@@ -24,11 +24,11 @@ public class Filter {
 		Mat F = fft.getMagImg();
 		
        //入力画像をフーリエ変換したものを表示
-		JFrame magWin = new JFrame();
+		/*JFrame magWin = new JFrame();
         magWin.getContentPane().add(new JLabel(
                 new ImageIcon(fft.getMagImg2())));
         magWin.setVisible(true);
-        magWin.pack();
+        magWin.pack();*/
 		
         
 	    String output = "result1.jpg";// フィルタの取得
@@ -40,10 +40,10 @@ public class Filter {
 		Mat G = fftg.getMagImg();
 
 		
-        magWin.getContentPane().add(new JLabel(
+       /* magWin.getContentPane().add(new JLabel(
                 new ImageIcon(fftg.getMagImg2())));
         magWin.setVisible(true);
-        magWin.pack();
+        magWin.pack();*/
 	    
 		
 		List<Mat> planes = new ArrayList<Mat>();
@@ -55,9 +55,10 @@ public class Filter {
         Core.split(G, planes);
         Core.normalize(planes.get(0), restoredImage, 0, 255, Core.NORM_MINMAX);
         
-        //System.out.println(G.type());
-        List<Mat> planes_s = new ArrayList<Mat>();//Mat型のArrayList 実部と虚部に分ける
-        Core.split(G, planes_s);
+        
+        System.out.println(restoredImage.type());
+        /*List<Mat> planes_s = new ArrayList<Mat>();//Mat型のArrayList 実部と虚部に分ける
+        Core.split(G, planes_s);*/
 
 	    Imgcodecs.imwrite("Filter.png", restoredImage);			// 出力画像の保存
 		System.out.println("Done!");
