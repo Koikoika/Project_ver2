@@ -84,16 +84,9 @@ public class CreateImage2 {
 			
 			OpenCVFFT2D fft = new OpenCVFFT2D(filename);   //読み込んだ入力画像のフーリエ変換
 			Mat F = fft.getMagImg();//フーリエ変換後(Mat型)
-			/*System.out.println(F.type());
-			System.out.println(F.height());
-			System.out.println(F.width());*/
 			
 			OpenCVFFT2D fftg = new OpenCVFFT2D(outname);//出力画像のフーリエ変換
 			Mat G = fftg.getMagImg();// 出力画像のフーリエ変換後(Mat型)
-			/*System.out.println(G.type());
-			System.out.println(G.height());
-			System.out.println(G.width());*/
-			
 			
 			Core.mulSpectrums(F,F,Fresult,Core.DFT_COMPLEX_OUTPUT,true);// MOSSEフィルタ作成の式の分母(出力画像のフーリエ変換したMat、その複素共役、出力先、ROW、2番目を複素共役にするか否か)
 			Core.add(result1, Fresult, result1);//分母
@@ -105,6 +98,7 @@ public class CreateImage2 {
 			
 			F = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
 			G = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
+			
 			count++;
 		}
 		
@@ -142,11 +136,6 @@ public class CreateImage2 {
 		Imgcodecs.imencode(".jpg", dst1, byteMat);
 		Imgcodecs.imwrite(resultfilename, restoredImage);
 		
-		//フィルタの表示
-		/*JFrame resultWin = new JFrame();
-		resultWin.getContentPane().add(new JLabel(new ImageIcon(convertMatToBufferedImage(restoredImage))));
-		resultWin.setVisible(true);
-		resultWin.pack()*/;
 		
 		System.out.println(String.format("done."));
 	}
