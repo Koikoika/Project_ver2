@@ -39,6 +39,7 @@ public class Filter {
         Core.split(G, planes);
         Core.normalize(planes.get(0), restoredImage, 0, 255, Core.NORM_MINMAX);
         
+        
 	    Imgcodecs.imwrite("Filter.png", restoredImage);			// 出力画像の保存
 		System.out.println("Done!");
 	}
