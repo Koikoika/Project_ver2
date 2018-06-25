@@ -32,48 +32,19 @@ public class OpenCVFFT2D {
 		}
 	}
 
-	/*public BufferedImage getSrcImg() throws IOException {// 元の画像を得る
-		return this.convertMatToBufferedImage(img);
-	}*/
-
 	public Mat getMagImg() throws IOException {// フーリエ変換の結果を得る
 		Mat[] ans;
 		ans = getDFT(img);
 		return ans[0];
 	}
 
-	/*public BufferedImage getMagImg2() throws IOException {// フーリエ変換で出来た画像を得る(BufferedImage型)
-		Mat[] ans;
-		ans = getDFT(img);
-		return this.convertMatToBufferedImage(ans[0]);
-	}*/
 
 	public Mat get2MagImg() throws IOException {// 逆フーリエ変換で出来た画像を得る(Mat型)
 		Mat[] ans;
 		ans = getDFT(img);
 		return ans[1];
 	}
-
-	/*public BufferedImage get2MagImg2() throws IOException {// 逆フーリエ変換で出来た画像を得る(BufferedImage型)
-		Mat[] ans;
-		ans = getDFT(img);
-		return this.convertMatToBufferedImage(ans[1]);
-	}
-
-	/*public Mat getAnswer() throws IOException {
-		Mat[] ans;
-		ans = getDFT(img);
-		return ans[0];
-	}*/
-
-	/*private BufferedImage convertMatToBufferedImage(Mat m)// 画像を出力できる形式に変換するメソッド
-			throws IOException {
-		MatOfByte byteMat = new MatOfByte();
-		Imgcodecs.imencode(".jpg", m, byteMat);
-		InputStream in = new ByteArrayInputStream(byteMat.toArray());
-		return ImageIO.read(in);
-	}*/
-
+	
 	private Mat[] getDFT(Mat singleChannelImage) {
 
 		Mat dst[] = new Mat[3];
@@ -85,37 +56,9 @@ public class OpenCVFFT2D {
 
 		//正規化（やり方1）
 		 Core.normalize(grayImage, grayImage, 0,1, Core.NORM_MINMAX);
-		 /*double[] data = new double[2];
+		 /*double[] data = new double[2];*/
 		 
-		 正規化（やり方2）
-		/*double max = -1;
-
 		
-		Size size = grayImage.size();
-		
-		
-		for (int i = 0; i <size.width; i++) {
-			for (int j = 0; j < size.height;j++) {
-				data = grayImage.get(i, j);
-				//System.out.println(data[0]);
-				//System.out.println(max);
-				if (max < data[0]) {
-					max = data[0];
-				}
-			}
-		}
-		//System.out.println(max);
-		//System.out.println(data[0]/max);
-
-		//System.out.println(grayImage.type());
-		
-		for (int i = 0; i < size.width; i++) {
-			for (int j = 0; j < size.height; j++) {
-				data = grayImage.get(i, j);
-				//double data2[] = {data[0]/max,0,0};
-				grayImage.put(i,j,data[0]/max);
-			}
-		}*/
 		 
 		// DFT 変換のサイズを計算
 		int m = Core.getOptimalDFTSize(grayImage.rows());
@@ -139,53 +82,6 @@ public class OpenCVFFT2D {
 		Core.dft(complexI, complexI2);
 		dst[0] = complexI2;
 		
-		/*Core.split(complexI2, planes);// マルチチャンネルの配列を，複数のシングルチャンネルの配列に分割します．(マルチチャンネルの入力配列,出力配列)
-		Mat mag = new Mat(planes.get(0).size(), planes.get(0).type());// 新たな画像を作成
-		Core.magnitude(planes.get(0), planes.get(1), mag);
-
-		Mat magI = mag;
-		Mat magI2 = new Mat(magI.size(), magI.type());
-		Mat magI3 = new Mat(magI.size(), magI.type());
-		Mat magI4 = new Mat(magI.size(), magI.type());
-		Mat magI5 = new Mat(magI.size(), magI.type());
-
-		// Normalize.
-		Core.add(magI, Mat.ones(padded.size(), CvType.CV_64F), magI2);// ones 行列要素を1で埋めて初期化します．
-		Core.log(magI2, magI3);// 各配列要素の絶対値の自然対数を求めます．（入力配列、出力配列）
-
-		// 交換
-		Mat crop = new Mat(magI3, new Rect(0, 0, magI3.cols() & -2, magI3.rows() & -2));
-
-		magI4 = crop.clone();
-
-		int cx = magI4.cols() / 2;// 横
-		int cy = magI4.rows() / 2;// 縦
-
-		Rect q0Rect = new Rect(0, 0, cx, cy); // top left=(x, y), (width, height)
-		Rect q1Rect = new Rect(cx, 0, cx, cy);
-		Rect q2Rect = new Rect(0, cy, cx, cy);
-		Rect q3Rect = new Rect(cx, cy, cx, cy);
-
-		Mat q0 = new Mat(magI4, q0Rect); // Top-Left
-		Mat q1 = new Mat(magI4, q1Rect); // Top-Right
-		Mat q2 = new Mat(magI4, q2Rect); // Bottom-Left
-		Mat q3 = new Mat(magI4, q3Rect); // Bottom-Right
-
-		Mat tmp = new Mat();
-		q0.copyTo(tmp);
-		q3.copyTo(q0);
-		tmp.copyTo(q3);
-
-		q1.copyTo(tmp);
-		q2.copyTo(q1);
-		tmp.copyTo(q2);
-
-		Core.normalize(magI4, magI5, 0, 255, Core.NORM_MINMAX);// 配列のノルム，またはその範囲を正規化します．
-
-		// 変換
-		Mat realResult = new Mat(magI5.size(), CvType.CV_8UC1);
-		magI5.convertTo(realResult, CvType.CV_8UC1);
-		dst[0] = realResult;*/
 
 		// 逆フーリエ変換
 		Core.idft(complexI2, complexI2);
@@ -217,31 +113,7 @@ public class OpenCVFFT2D {
 		File file = new File("input");// 入力画像
 		System.out.println(String.format("Read %s.", file.getName()));
 		OpenCVFFT2D fft = new OpenCVFFT2D(file.getAbsolutePath());
-
-		// Show the Source image.
-		/*JFrame orgWin = new JFrame();
-		orgWin.getContentPane().add(new JLabel(new ImageIcon(fft.getSrcImg())));
-		orgWin.setVisible(true);
-		orgWin.pack();*/
-
-		// Show the magnitude image.
-		/*JFrame magWin = new JFrame();
-		magWin.getContentPane().add(new JLabel(new ImageIcon(fft.getMagImg2())));
-		magWin.setVisible(true);
-		magWin.pack();
-		String filename = "output";// 出力ファイル
-		System.out.println(String.format("Write %s", filename));
-		Imgcodecs.imwrite(filename, fft.getAnswer());*/
-
-		// 逆フーリエ変換の結果の出力
-		/*JFrame org2Win = new JFrame();
-		org2Win.getContentPane().add(new JLabel(new ImageIcon(fft.get2MagImg2())));
-		org2Win.setVisible(true);
-		org2Win.pack();
-		String filename2 = "output";// 出力ファイル
-		System.out.println(String.format("Write %s", filename2));
-		Imgcodecs.imwrite(filename2, fft.get2MagImg());*/
-
+		
 		System.out.println(String.format("done."));
 	}
 }
