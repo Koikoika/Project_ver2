@@ -15,32 +15,55 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 public class Filter {
-
+	static int width = 96;// 画像サイズ 
+	static int height = 128;
+	
 	public static void main(String[] args) throws IOException {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		String input = "img.jpg";	// 入力画像
+		String input = "/Users/Karin.T/Documents/3pro/Girl/img/1.jpg";	// 入力画像
 		
 		OpenCVFFT2D fft = new OpenCVFFT2D(input);
-		Mat F = fft.getMagImg();
+		Mat[] F = new Mat[1];
+		F[0] = Mat.zeros(width, height, CvType.CV_64FC2);
+		fft.getMagImg(F);//フーリエ変換後(Mat型)
         
-	    String output = "result1.jpg";// フィルタの取得
-	    Mat im = Imgcodecs.imread(output);
+	    String output = "/Users/Karin.T/Documents/3pro/result_Girl1.jpg";// フィルタの取得
+	    Mat im = Imgcodecs.imread(output).clone();
 	    double[] data = new double[3];
 	    
 	    //フィルターをフーリエ変換する
 	    OpenCVFFT2D fftg = new OpenCVFFT2D(output);
-		Mat G = fftg.getMagImg();
+		Mat[] G = new Mat[1];
+		G[0] = Mat.zeros(width, height, CvType.CV_64FC2);
+		fftg.getMagImg(G);//フーリエ変換後(Mat型)
 
 		List<Mat> planes = new ArrayList<Mat>();
-	    Core.mulSpectrums(F, G, G, 0);
+	    Core.mulSpectrums(F[0], G[0], G[0], 0);
 	    
-	    Core.idft(G, G);
-        Mat restoredImage = new Mat();
-        Core.split(G, planes);
+	    Core.idft(G[0], G[0]);
+        Mat restoredImage = Mat.zeros(width, height, CvType.CV_64FC3);
+        Core.split(G[0], planes);
+        
         Core.normalize(planes.get(0), restoredImage, 0, 255, Core.NORM_MINMAX);
         
+	    Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/Filter_girl2.png", restoredImage);			// 出力画像の保存
+	    
+        double max = -1;
         
-	    Imgcodecs.imwrite("Filter.png", restoredImage);			// 出力画像の保存
+        int[] place = new int[2];
+        
+		for (int i = 0; i <width; i++) {
+			for (int j = 0; j < height;j++) {
+				data =restoredImage.get(i, j);
+				if (max < data[0]) {
+					max = data[0];
+					place[0] = j;
+					place[1] = i;
+				}
+			}
+		}
+		System.out.println("x="+place[0]+"　y="+place[1]);
 		System.out.println("Done!");
 	}
 }
+
