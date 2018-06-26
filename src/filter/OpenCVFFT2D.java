@@ -24,6 +24,7 @@ import org.opencv.imgproc.Imgproc;
 
 public class OpenCVFFT2D {
 	Mat img;
+	Mat dft_img;
 
 	public OpenCVFFT2D(String filename) throws IOException {
 		img = Imgcodecs.imread(filename, Imgcodecs.CV_LOAD_IMAGE_COLOR);// 3チャンネルとして読み込む
@@ -32,33 +33,26 @@ public class OpenCVFFT2D {
 		}
 	}
 
-	public Mat getMagImg() throws IOException {// フーリエ変換の結果を得る
-		Mat[] ans;
-		ans = getDFT(img);
-		return ans[0];
+	public void getMagImg(Mat[] ans) throws IOException {// フーリエ変換の結果を得る
+		getDFT(img,ans);
 	}
 
 
-	public Mat get2MagImg() throws IOException {// 逆フーリエ変換で出来た画像を得る(Mat型)
-		Mat[] ans;
-		ans = getDFT(img);
-		return ans[1];
+	public void getDFTImg(Mat[] ans) throws IOException {// 逆フーリエ変換で出来た画像を得る(Mat型)
+		getIDFT(dft_img,ans);
 	}
 	
-	private Mat[] getDFT(Mat singleChannelImage) {
+	public void  getDFT(Mat singleChannelImage,Mat[] dst) {
 
-		Mat dst[] = new Mat[3];
 		//グレースケール変換
 		Mat grayImage = Mat.zeros(singleChannelImage.size(), CvType.CV_64F);
+		
 		// 関数 cvtColor は，入力画像の色空間を別の色空間に変換します
 		Imgproc.cvtColor(singleChannelImage, grayImage, Imgproc.COLOR_RGB2GRAY);//カラー画像からグレースケール画像へ
 		grayImage.convertTo(grayImage, CvType.CV_64F);
 
-		//正規化（やり方1）
+		//正規化
 		 Core.normalize(grayImage, grayImage, 0,1, Core.NORM_MINMAX);
-		 /*double[] data = new double[2];*/
-		 
-		
 		 
 		// DFT 変換のサイズを計算
 		int m = Core.getOptimalDFTSize(grayImage.rows());
@@ -80,32 +74,19 @@ public class OpenCVFFT2D {
 
 		// フーリエ変換 
 		Core.dft(complexI, complexI2);
-		dst[0] = complexI2;
+		dst[0] = complexI2.clone();
 		
-
-		// 逆フーリエ変換
-		Core.idft(complexI2, complexI2);
-		Mat restoredImage = new Mat();
-		Core.split(complexI2, planes);
-		Core.normalize(planes.get(0), restoredImage, 0, 255, Core.NORM_MINMAX);
-		dst[1] = restoredImage;
-
-		return dst;
 	}
-
-	void shiftDFT(Mat src, Mat dst) {
-		Mat tmp = new Mat(src.size(), src.type());
-		;
-		int cx = src.cols() / 2;
-		int cy = src.rows() / 2;
-
-		for (int i = 0; i <= cx; i += cx) {
-			Mat qs = new Mat(src, new Rect(i ^ cx, 0, cx, cy));
-			Mat qd = new Mat(dst, new Rect(i, cy, cx, cy));
-			qs.copyTo(tmp);
-			qd.copyTo(qs);
-			tmp.copyTo(qd);
-		}
+	
+	public void getIDFT(Mat DFTChannelImage,Mat[] dst) {
+		List<Mat> planes = new ArrayList<Mat>();
+		// 逆フーリエ変換
+		Core.idft(DFTChannelImage, DFTChannelImage);
+		Mat restoredImage = new Mat();
+		Core.split(DFTChannelImage, planes);
+		Core.normalize(planes.get(0), restoredImage, 0, 255, Core.NORM_MINMAX);
+		dst[1] = restoredImage.clone();
+	
 	}
 
 	public static void main(String[] args) throws Exception {
