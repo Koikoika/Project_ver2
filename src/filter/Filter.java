@@ -4,31 +4,29 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.imgproc.Imgproc;
+
 
 public class Filter {
 	static int width = 96;// 画像サイズ 
 	static int height = 128;
 	
+	 
+	
 	public static void main(String[] args) throws IOException {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		String input = "/Users/Karin.T/Documents/3pro/Girl/img/1.jpg";	// 入力画像
+		String input = "img/0500.jpg";	// 入力画像
 		
 		OpenCVFFT2D fft = new OpenCVFFT2D(input);
 		Mat[] F = new Mat[1];
 		F[0] = Mat.zeros(width, height, CvType.CV_64FC2);
 		fft.getMagImg(F);//フーリエ変換後(Mat型)
         
-	    String output = "/Users/Karin.T/Documents/3pro/result_Girl1.jpg";// フィルタの取得
-	    Mat im = Imgcodecs.imread(output).clone();
+	    String output = "result_Girl500.jpg";// フィルタの取得
 	    double[] data = new double[3];
 	    
 	    //フィルターをフーリエ変換する
@@ -46,7 +44,7 @@ public class Filter {
         
         Core.normalize(planes.get(0), restoredImage, 0, 255, Core.NORM_MINMAX);
         
-	    Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/Filter_girl2.png", restoredImage);			// 出力画像の保存
+	    Imgcodecs.imwrite("result500.jpg", restoredImage);			// 出力画像の保存
 	    
         double max = -1;
         
@@ -63,7 +61,7 @@ public class Filter {
 			}
 		}
 		System.out.println("x="+place[0]+"　y="+place[1]);
+		
 		System.out.println("Done!");
 	}
 }
-
