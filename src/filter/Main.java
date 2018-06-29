@@ -1,30 +1,19 @@
 package filter;
 
-import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.core.Rect;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+
 
 public class Main{
 	static int width =96;// 画像サイズ y
@@ -32,7 +21,7 @@ public class Main{
 
 //出力画像を作成するためのメソッド
    public static void createGimg(String filename,int number) throws FileNotFoundException {
-	   Scanner scanner = new Scanner(new File("groundtruth_rect.txt"));// 座標の書いてあるテキストフィルタを読み込む
+	   Scanner scanner = new Scanner(new File("/Documents/3pro/Girl/groundtruth_rect.txt"));// 座標の書いてあるテキストフィルタを読み込む
 	   int x , y, w, h,count;
 	   Mat dst1 = Mat.zeros(width, height, CvType.CV_64FC1);// 0で初期化
 	   count = 1;
@@ -58,7 +47,7 @@ public class Main{
 
 		Imgproc.GaussianBlur(dst1, dst1, new Size(w,h), 2, 2);
 		
-		String outname = "img_G/" + String.valueOf(count) + ".jpg";// 出力ファイル
+		String outname = "/Documents/3pro/Girl/img_G/" + String.valueOf(count) + ".jpg";// 出力ファイル
 		Imgcodecs.imwrite(outname, dst1);
 		
 		dst1 = Mat.zeros(width, height, CvType.CV_64FC1);// 0で初期化	
@@ -88,6 +77,7 @@ public class Main{
 		Mat result1 = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
 		Mat result2 = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
 		Mat Fresult =  Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
+		
 		List<Mat> planes = new ArrayList<Mat>();
 		
 		int count = 1;
@@ -99,10 +89,10 @@ public class Main{
 		// 出力画像（黒い画像に白い点が1点）の作成
 		//1度作成した場合はコメントアウト
 			
-			outname = "img_G/" + String.valueOf(count) + ".jpg";//出力画像
+			outname = "/Documents/3pro/Girl/img_G/" + String.valueOf(count) + ".jpg";//出力画像
 			
 			// MOSSEフィルター作成
-			filename= "img/" + String.valueOf(count) + ".jpg";// 入力画像
+			filename= "/Documents/3pro/Girl/img/" + String.valueOf(count) + ".jpg";// 入力画像
 			
 			OpenCVFFT2D fft = new OpenCVFFT2D(filename);   //読み込んだ入力画像のフーリエ変換
 			Mat[] F = new Mat[1];
@@ -130,15 +120,16 @@ public class Main{
 		}
 		
 		Core.divide(result2, result1, result);
-		String resultfilename = "result_Girl1.jpg";//出力ファイル
+		String resultfilename;
+		//String resultfilename = "/Users/Karin.T/Documents/3pro/Girl/Result/result_Girl1.jpg";//出力ファイル
 		
-		Core.idft(result, result);
+		/*Core.idft(result, result);
         Mat restoredImage = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
         Core.split(result, planes);
-        Core.normalize(planes.get(0), restoredImage, 0,255, Core.NORM_MINMAX);
+        Core.normalize(planes.get(0), restoredImage, 0,255, Core.NORM_MINMAX);*/
 		
 		// 画像の保存
-		Imgcodecs.imwrite(resultfilename, restoredImage);
+		//Imgcodecs.imwrite(resultfilename, result);
 		
 		//フィルタの更新
 		Mat Ai = Mat.ones(width,height,CvType.CV_64FC2);
@@ -149,35 +140,41 @@ public class Main{
 		Mat resultImage_filter =  Mat.zeros(width,height,CvType.CV_64FC2);
 		
 		
+		
 		while(count<501) {
 			List<Mat> planes2 = new ArrayList<Mat>();
-			outname = "img_G/" + String.valueOf(count) + ".jpg";//出力画像(黒い画像)	
+			//outname = "/Users/Karin.T/Documents/3pro/Girl/img_G/" + String.valueOf(count) + ".jpg";//出力画像(黒い画像)	
 			
-			if(count>300)  filename= "/0" + String.valueOf(count) + ".jpg";// 入力画像(写真)
-			else filename= "" + String.valueOf(count) + ".jpg";// 入力画像
+			if(count>300)  filename= "/Documents/3pro/Girl/img/0" + String.valueOf(count) + ".jpg";// 入力画像(写真)
+			else filename= "/Documents/3pro/Girl/img/" + String.valueOf(count) + ".jpg";// 入力画像
 			
 			OpenCVFFT2D fft = new OpenCVFFT2D(filename);   //読み込んだ入力画像のフーリエ変換
 			Mat[] F = new Mat[1];
 			F[0] = Mat.zeros(width, height, CvType.CV_64FC2);
 			fft.getMagImg(F);
 			
-			OpenCVFFT2D fftg = new OpenCVFFT2D(outname);    //出力画像のフーリエ変換
 			Mat[] G = new Mat[1];
 			G[0] = Mat.zeros(width, height, CvType.CV_64FC2);
-			fftg.getMagImg(G);//フーリエ変換後(Mat型)
+			 if(count==11) Core.mulSpectrums(F[0], result, G[0], 0);
+			 else  Core.mulSpectrums(F[0], result_filter, G[0], 0);
+			 result_filter = Mat.zeros(width, height, CvType.CV_64FC2);
+			/*OpenCVFFT2D fftg = new OpenCVFFT2D(outname);    //出力画像のフーリエ変換
+			
+			fftg.getMagImg(G);//フーリエ変換後(Mat型)*/
+			
+			
 			
 			// MOSSEフィルタ作成の式の分母(出力画像のフーリエ変換したMat、その複素共役、出力先、ROW、2番目を複素共役にするか否か)
 			Core.mulSpectrums(F[0], F[0], Fresult,Core.DFT_COMPLEX_OUTPUT,true);//分母 B
-			
-			
+			//ここで定数を足す　0.0????　F・F*+e フィルタの安定性を高めるため
 			Core.mulSpectrums(G[0], F[0], Gstar,Core.DFT_COMPLEX_OUTPUT,true);//  MOSSEフィルタ作成の式の分子(出力画像のフーリエ変換したMat、その複素共役、出力先、ROW、2番目を複素共役にするか否か
 			
 			mult(Gstar,0.125,Gstar);
 			mult(Fresult,0.125,Fresult);
 			
 			if(count==11) {
-				mult(result2,(1-0.125),result2);
-				mult(result1,(1-0.125),result2);
+				mult(result2,(1-0.125),result2);//分子
+				mult(result1,(1-0.125),result1);//分母
 				Core.add(Gstar,result2,Aia);//分子
 				Core.add(Fresult,result1,Bia);//分母
 			} else {
@@ -187,15 +184,16 @@ public class Main{
 				Core.add(Fresult,Bi,Bia);//分母	
 			}
 			
-			Core.divide(Bia, Aia, result_filter);
-			resultfilename = "result_Girl"+String.valueOf(count)+".jpg";
+			Core.divide(Aia, Bia, result_filter);
+			resultfilename = "/Documents/3pro/Girl/result_Filter/result_Girl"+String.valueOf(count)+".jpg";//出力先
 			
-			Core.idft(result_filter, result_filter);
-	        Core.split(result_filter, planes2);
+			Core.idft(G[0], G[0]);
+	        Core.split(G[0], planes2);
 	        Core.normalize(planes2.get(0), resultImage_filter, 0,255, Core.NORM_MINMAX);
 			
 			// 画像の保存
 			Imgcodecs.imwrite(resultfilename, resultImage_filter);
+			
 			
 			F[0] = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
 			G[0] = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
