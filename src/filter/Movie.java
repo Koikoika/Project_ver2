@@ -234,8 +234,6 @@ public class Movie extends JPanel {
 					Aia = Mat.zeros(width, height, CvType.CV_64FC2);
 					Bia = Mat.zeros(width, height, CvType.CV_64FC2);
 
-					
-					
 					count++;
 					/*
 					 * Imgproc.resize(webcam_image, webcam_image, new
