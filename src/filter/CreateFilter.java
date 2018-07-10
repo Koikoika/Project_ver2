@@ -104,6 +104,7 @@ public class CreateFilter {
 
 		List<Mat> planes2 = new ArrayList<Mat>();
 
+		
 		Mat output_mat = Mat.zeros(width, height, CvType.CV_64FC2);
 		// if(count==11)
 		Core.mulSpectrums(Fourier_input_file[0], result[2], output_mat, 0);

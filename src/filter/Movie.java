@@ -188,6 +188,7 @@ public class Movie extends JPanel {
 		
 		Mat sample = Mat.zeros(width, height, CvType.CV_64FC3);
 		
+		
 		//フィルタ作成における白ポチ画像
 		Mat[] img = new Mat[1];
 		img[0] = Mat.zeros(width, height, CvType.CV_64FC3);

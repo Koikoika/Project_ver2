@@ -41,7 +41,6 @@ public class OpenCVFFT2D {
 		getDFT(img,ans);
 	}
 
-
 	public void getIDFTImg(Mat[] ans) throws IOException {// 逆フーリエ変換で出来た画像を得る(Mat型)
 		getIDFT(img,ans);
 	}
