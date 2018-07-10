@@ -32,14 +32,18 @@ public class OpenCVFFT2D {
 			throw new RuntimeException("Can't load image.");
 		}
 	}
+	
+	public OpenCVFFT2D(Mat inputmat) throws IOException {
+		img = inputmat.clone();
+	}//Mat型によるinput
 
 	public void getMagImg(Mat[] ans) throws IOException {// フーリエ変換の結果を得る
 		getDFT(img,ans);
 	}
 
 
-	public void getDFTImg(Mat[] ans) throws IOException {// 逆フーリエ変換で出来た画像を得る(Mat型)
-		getIDFT(dft_img,ans);
+	public void getIDFTImg(Mat[] ans) throws IOException {// 逆フーリエ変換で出来た画像を得る(Mat型)
+		getIDFT(img,ans);
 	}
 	
 	public void  getDFT(Mat singleChannelImage,Mat[] dst) {

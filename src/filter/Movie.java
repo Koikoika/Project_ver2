@@ -2,9 +2,11 @@ package filter;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 import javax.swing.*;
 import org.opencv.core.Core;
@@ -14,12 +16,13 @@ import org.opencv.core.Size;
 import org.opencv.videoio.*;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.highgui.*;
 
 public class Movie extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private BufferedImage image;
-	static int width = 96;
-	static int height = 128;
+	static int width = 720;
+	static int height = 1280;
 
 	// Create a constructor method
 	public Movie() {
@@ -81,11 +84,25 @@ public class Movie extends JPanel {
 		}
 	}
 
+	// 四角を書くためのメソッド
+	public static void drawsquare(Mat input_img, int[] data) {
+		int[] rgb = { 255, 0, 0 };
+		input_img.put(data[1], data[0], rgb);
+		input_img.put(data[1] + 1, data[0], rgb);
+		input_img.put(data[1] - 1, data[0], rgb);
+		input_img.put(data[1], data[0] + 1, rgb);
+		input_img.put(data[1], data[0] - 1, rgb);
+		/*
+		 * for (int i = 0; i <data[2]; i++) { for (int j = 0; j <data[3] ; j++) {
+		 * input_img.put(data[0]+j, data[1], rgb); } }
+		 */
+	}
+
 	// 各画素に定数をかけるためのメソッド
 	public static void mult(Mat src, double number, Mat dft_ans) {
 		double[] data = new double[2];
-		for (int i = 0; i < width; i++) {
-			for (int j = 0; j < height; j++) {
+		for (int i = 0; i < dft_ans.width(); i++) {
+			for (int j = 0; j < dft_ans.height(); j++) {
 				data = src.get(i, j);
 				// System.out.println(data[0]);
 				data[0] = data[0] * number;
@@ -95,12 +112,12 @@ public class Movie extends JPanel {
 		}
 	}
 
-	public static int[] max(int width, int height, Mat img) {
+	public static int[] max(Mat img) {// 最大の画素値の座標を返す
 		double max = -1;
 		double[] data = new double[2];
 		int[] place = new int[2];
-		for (int i = 0; i < width; i++) {
-			for (int j = 0; j < height; j++) {
+		for (int i = 0; i < img.width(); i++) {
+			for (int j = 0; j < img.height(); j++) {
 				data = img.get(i, j);
 				if (max < data[0]) {
 					max = data[0];
@@ -121,128 +138,134 @@ public class Movie extends JPanel {
 		Movie panel = new Movie();
 		frame.setContentPane(panel);
 		frame.setVisible(true);
-		Mat webcam_image = Mat.ones(width, height, CvType.CV_64F);
+		Mat webcam_image = Mat.ones(width, height, CvType.CV_64FC3);
 		BufferedImage temp;
 		VideoCapture capture = new VideoCapture(0);
 
-		Mat Ai = Mat.ones(width, height, CvType.CV_64FC2);
-		Mat Bi = Mat.ones(width, height, CvType.CV_64FC2);
-		Mat Aia = Mat.zeros(width, height, CvType.CV_64FC2);
-		Mat Bia = Mat.zeros(width, height, CvType.CV_64FC2);
-		Mat result_filter = Mat.zeros(width, height, CvType.CV_64FC2);
-		Mat resultImage_filter = Mat.zeros(width, height, CvType.CV_64FC2);
-		Mat Fresult = Mat.ones(width, height, CvType.CV_64FC2);// 0で初期化
-		Mat Gstar = Mat.ones(width, height, CvType.CV_64FC2);
-		Mat result1 = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
-		Mat result2 = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
-		Mat grayImage = Mat.zeros(width,height, CvType.CV_64F);
-		
-		Main filter = new Main();
-		filter.createFilter();
-		Mat[] ans = new Mat[1];
-		ans[0] = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
-		filter.getFilter(ans);
+		// capture.read(webcam_image);
+		// System.out.println(webcam_image.size());
+
+		CreateFilter filter = new CreateFilter(width, height);
+
 		Mat filter_img = Mat.ones(width, height, CvType.CV_64FC2);
 		String resultfilename;
 
-		int count = 0;
+		
+		int x, y, w, h;
+		
 		List<Mat> planes2 = new ArrayList<Mat>();
 
+		//フィルタ作成の際に使用するMat
+		Mat[] ans_input = new Mat[1];
+		Mat[] ans_output = new Mat[1];
+		Mat[] input = new Mat[20];
+		Mat[] output = new Mat[20];
+		Mat[] result = new Mat[3];
+		
+		//フィルタ更新の際に使用するMat
+		Mat[] update_input = new Mat[1];
+        Mat[] result_update = new Mat[3];
+        result_update[0] =  Mat.zeros(width, height, CvType.CV_64FC2);
+        result_update[1] =  Mat.zeros(width, height, CvType.CV_64FC2);
+        result_update[2] =  Mat.zeros(width, height, CvType.CV_64FC2);
+        Mat output_mat = Mat.zeros(width, height, CvType.CV_64FC3);
+        int[] ouput_data = new int[4];
+        
+		int[] data = new int[4];
+		data[0] = height/2;
+		data[1] = width/2;
+		data[2] = height/2;
+		data[3] = width/2;
+		
+		//int[] value = new int[2];
+		int count = 1;
+		Mat Camera = Mat.ones(width, height, CvType.CV_32S);
+		List<Mat> list = new ArrayList<>();
+		
+		
+		ans_input[0] = Mat.zeros(width, height, CvType.CV_64FC2);
+		ans_output[0] = Mat.zeros(width, height, CvType.CV_64FC2);
+		
+		Mat sample = Mat.zeros(width, height, CvType.CV_64FC3);
+		
+		//フィルタ作成における白ポチ画像
+		Mat[] img = new Mat[1];
+		img[0] = Mat.zeros(width, height, CvType.CV_64FC3);
+		filter.createGimg(img, data);
+		sample = img[0].clone();
+		Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/outputfile/ouput_initial.jpg", sample);
+
+		filter.toFourier(img, ans_output);// 白ポチ
+		
+		
 		if (capture.isOpened()) {
+
 			while (true) {
 
 				capture.read(webcam_image);
 
 				if (!webcam_image.empty()) {
-					Imgproc.cvtColor(webcam_image,grayImage, Imgproc.COLOR_RGB2GRAY);//カラー画像からグレースケール画像へ
-					grayImage.convertTo(grayImage, CvType.CV_64F);
-					Core.normalize(grayImage, grayImage, 0,1, Core.NORM_MINMAX);
-					int m = Core.getOptimalDFTSize(grayImage.rows());
-					int n = Core.getOptimalDFTSize(grayImage.cols());
-					
-					Mat padded = new Mat(new Size(n, m), grayImage.type());
-
-					// 画像のまわりに境界を作成します．（入力画像、出力画像、以下で上下左右の各方向に，元の画像矩形から何ピクセル分の境界を作る必要があるかを指定）
-					Core.copyMakeBorder(grayImage, padded, 0, m - grayImage.rows(), 0, n - grayImage.cols(),
-							Core.BORDER_CONSTANT);
-
-					// Make complex matrix.
-					List<Mat> planes = new ArrayList<Mat>();// Mat型のArrayList 実部と虚部に分ける
-					planes.add(padded);// グレイスケール画像と同じ大きさの新たな画像を追加
-					planes.add(Mat.zeros(padded.size(), padded.type()));// 先ほど加えた画像と同じ大きさの全ての値が0である画像を追加
-					Mat complexI = Mat.zeros(padded.size(), CvType.CV_64F);
-					Mat complexI2 = Mat.zeros(padded.size(), CvType.CV_64F);
-					Core.merge(planes, complexI);// 複数のシングルチャンネル配列からマルチチャンネル配列を作成．*/
-
-					
-					Core.dft(complexI, filter_img);
-					Mat[] G = new Mat[1];
-					G[0] = Mat.zeros(width, height, CvType.CV_64FC2);
-					System.out.println(filter_img.size());
-					System.out.println( ans[0].size());
-					System.out.println( G[0].type());
-					if (count == 0)
-						Core.mulSpectrums(filter_img, ans[0], G[0], 0);
-					else
-						Core.mulSpectrums(filter_img, result_filter, G[0], 0);
-					result_filter = Mat.zeros(width, height, CvType.CV_64FC2);
-
-					Core.mulSpectrums(filter_img, filter_img, Fresult, Core.DFT_COMPLEX_OUTPUT, true);// 分母 B
-					Core.mulSpectrums(G[0], filter_img, Gstar, Core.DFT_COMPLEX_OUTPUT, true);// MOSSEフィルタ作成の式の分子(出力画像のフーリエ変換したMat、その複素共役、出力先、ROW、2番目を複素共役にするか否か
-
-					mult(Gstar, 0.125, Gstar);
-					mult(Fresult, 0.125, Fresult);
-
-					if (count == 1) {
-						mult(result2, (1 - 0.125), result2);// 分子
-						mult(result1, (1 - 0.125), result1);// 分母
-						Core.add(Gstar, result2, Aia);// 分子
-						Core.add(Fresult, result1, Bia);// 分母
-					} else {
-						mult(Ai, (1 - 0.125), Ai);
-						mult(Bi, (1 - 0.125), Bi);
-						Core.add(Gstar, Ai, Aia);// 分子
-						Core.add(Fresult, Bi, Bia);// 分母
-					}
-
-					Core.divide(Aia, Bia, result_filter);
-					// "/Documents/3pro/Girl/result_Filter/result_Girl"+String.valueOf(count)+".jpg";//出力先
-
-					Core.idft(G[0], G[0]);
-					Core.split(G[0], planes2);
-					Core.normalize(planes2.get(0), resultImage_filter, 0, 255, Core.NORM_MINMAX);
-
-					int[] value = max(resultImage_filter.width(),resultImage_filter.height(),resultImage_filter);
-					
-					int[] rgb = {255,0,0};
-					webcam_image.put(value[0], value[1], rgb);
-					webcam_image.put(value[0]+1, value[1], rgb);
-					webcam_image.put(value[0]-1, value[1], rgb);
-					webcam_image.put(value[0], value[1]+1, rgb);
-					webcam_image.put(value[0], value[1]-1, rgb);
-					
-					filter_img = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
-					G[0] = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
-					Fresult = Mat.ones(width, height, CvType.CV_64FC2);// 0で初期化
-					Gstar = Mat.ones(width, height, CvType.CV_64FC2);
-					Ai = Mat.ones(width, height, CvType.CV_64FC2);
-					Bi = Mat.ones(width, height, CvType.CV_64FC2);
-
-					Ai = Aia.clone();
-					Bi = Bia.clone();
-
-					Aia = Mat.zeros(width, height, CvType.CV_64FC2);
-					Bia = Mat.zeros(width, height, CvType.CV_64FC2);
-
-					count++;
-					/*
-					 * Imgproc.resize(webcam_image, webcam_image, new
-					 * Size(webcam_image.size().width*0.3,webcam_image.size().height*0.3));
-					 * frame.setSize(webcam_image.width()+40,webcam_image.height()+60);
-					 */
-					temp = matToBufferedImage(webcam_image);
-					panel.setimage(temp);
-					panel.repaint();
+					        //フィルタの作成
+					        Imgproc.resize(webcam_image, webcam_image, new Size(webcam_image.size().width*0.3,webcam_image.size().height*0.3));
+					        frame.setSize(webcam_image.width()+40,webcam_image.height()+60);  
+							Camera = webcam_image.clone();
+							Camera.convertTo(Camera, CvType.CV_32SC3);
+							if(count<=400) {
+							while(count<=400) {
+							//drawsquare(Camera, data);
+							
+							//listの初期化？
+                            list.add(webcam_image);
+                            
+							Camera.convertTo(Camera, CvType.CV_8UC3);
+							
+							webcam_image = Camera.clone();
+							temp=matToBufferedImage(webcam_image);  
+						    panel.setimage(temp);
+						    panel.repaint();
+						    count++;
+							}
+							int index = 0;
+							Mat[] listget = new Mat[1];
+							for(int i=1;i<400;i= i+30) {
+							// フーリエ変換する
+							listget[0] = Mat.zeros(width, height, CvType.CV_64FC3);
+							listget[0] = list.get(i);
+							filter.toFourier(listget, ans_input);// カメラの画像
+							// 初期の画像を作るため createFilterクラスの createFiletrを呼び出す
+							input[index] = Mat.ones(width, height, CvType.CV_64FC2);
+							input[index] = ans_input[0].clone();
+							ans_input[0] = Mat.zeros(width, height, CvType.CV_64FC2);
+							output[index] = Mat.ones(width, height, CvType.CV_64FC2);
+							output[index] = ans_output[0].clone();
+							ans_output[0] = Mat.zeros(width, height, CvType.CV_64FC2);
+							index++;
+							}						
+						filter.createFilter(input, output, 10, result);
+						System.out.println(result[0].type());	
+					} /*else {
+						// フィルタの更新
+						update_input[0] = webcam_image.clone();
+						filter.toFourier(update_input, ans_input);// カメラの画像
+						if(count==400) filter.updatefilter(result, update_input, result_update);
+						else filter.updatefilter(result_update, update_input, result_update);
+						Core.mulSpectrums(update_input[0], result_update[2], output_mat, 0);
+						data = max(output);
+						data[2] = height/2;
+						data[3] = width/2;
+						drawSquare(Camera,data);
+						
+						
+						update_input[0] =  Mat.zeros(width, height, CvType.CV_64FC3);
+					    Camera.convertTo(Camera, CvType.CV_8UC3);
+					    webcam_image = Camera.clone();
+					    temp=matToBufferedImage(webcam_image);  
+						panel.setimage(temp);
+						panel.repaint();
+						
+						ans_input[0] = Mat.zeros(width, height, CvType.CV_64FC2);
+						count++;
+					}*/
 				} else {
 					System.out.println(" --(!) No captured frame -- ");
 				}
@@ -250,4 +273,5 @@ public class Movie extends JPanel {
 		}
 		return;
 	}
+
 }
