@@ -1,17 +1,12 @@
 package filter;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
 
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
-import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 public class CreateFilter {
@@ -29,7 +24,15 @@ public class CreateFilter {
 		Mat[] F = new Mat[1];
 		F[0] = Mat.zeros(width, height, CvType.CV_64FC2);
 		fft.getMagImg(F);
-		ans[0] = F[0];
+		ans[0] = F[0].clone();
+	}
+	
+	public void IDFT(Mat[] mat,Mat[] ans) throws IOException {
+		OpenCVFFT2D fft = new OpenCVFFT2D(mat[0]); 
+		Mat[] G = new Mat[1];
+		G[0] = Mat.zeros(width, height, CvType.CV_64FC3);
+		fft.getIDFTImg(G);
+		ans[0] = G[0].clone();
 	}
 
 	// 出力画像を作成するためのメソッド
@@ -78,7 +81,7 @@ public class CreateFilter {
 		Mat Fresult = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
 
 		// createGimg("/Users/Karin.T/Documents/3pro/Girl/groundtruth_rect.txt",500);//読み込む座標のテキストと入力画像の枚数を引数に
-		for (int i = 1; i <= tocount; i++) {
+		for (int i = 0; i < tocount; i++) {
 			Core.mulSpectrums(Fourier_input_mat[i], Fourier_input_mat[i], Fresult, Core.DFT_COMPLEX_OUTPUT, true);// MOSSEフィルタ作成の式の分母(出力画像のフーリエ変換したMat、その複素共役、出力先、ROW、2番目を複素共役にするか否か)
 			Core.add(result1, Fresult, result1);// 分母 B（控える）
 			result[0] = result1.clone();
@@ -101,9 +104,6 @@ public class CreateFilter {
 		Mat resultImage_filter = Mat.zeros(width, height, CvType.CV_64FC2);
 		Mat input_result = Mat.ones(width, height, CvType.CV_64FC2);
 		Mat output_result = Mat.ones(width, height, CvType.CV_64FC2);
-
-		List<Mat> planes2 = new ArrayList<Mat>();
-
 		
 		Mat output_mat = Mat.zeros(width, height, CvType.CV_64FC2);
 		// if(count==11)
@@ -126,10 +126,11 @@ public class CreateFilter {
 
 		Core.divide(Aia, Bia, result_filter);
 
-		Core.idft(output_result, output_result);
+		update_result[2] = resultImage_filter;
+		/*Core.idft(output_result, output_result);
 		Core.split(output_result, planes2);
 		Core.normalize(planes2.get(0), resultImage_filter, 0, 255, Core.NORM_MINMAX);
-		update_result[2] = resultImage_filter;//フィルタ
+		update_result[2] = resultImage_filter;//フィルタ*/
 		
 		// 画像の保存
 		//Imgcodecs.imwrite(resultfilename, resultImage_filter);
