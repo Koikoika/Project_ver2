@@ -269,6 +269,7 @@ public class Movie extends JPanel {
 		int[] answer = new int[2];
 
 		if (capture.isOpened()) {
+			
 			while (true) {
 
 				capture.read(webcam_image);
