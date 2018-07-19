@@ -23,37 +23,37 @@ public class OpenCVFFT2D {
 			throw new RuntimeException("Can't load image.");
 		}
 	}
-	
+
 	public OpenCVFFT2D(Mat inputmat) throws IOException {
 		img = inputmat.clone();
-	}//Mat型によるinput
+	}// Mat型によるinput
 
 	public void getMagImg(Mat[] ans) throws IOException {// フーリエ変換の結果を得る
-		getDFT(img,ans);
+		getDFT(img, ans);
 	}
 
 	public void getIDFTImg(Mat[] ans) throws IOException {// 逆フーリエ変換で出来た画像を得る(Mat型)
-		getIDFT(img,ans);
+		getIDFT(img, ans);
 	}
-	
-	public void  getDFT(Mat singleChannelImage,Mat[] dst) {
+
+	public void getDFT(Mat singleChannelImage, Mat[] dst) {
 		Mat grayImage = Mat.zeros(singleChannelImage.size(), CvType.CV_64F);
-if(singleChannelImage.channels()>1) {
-		//グレースケール変換
-		
-		// 関数 cvtColor は，入力画像の色空間を別の色空間に変換します
-		Imgproc.cvtColor(singleChannelImage, grayImage, Imgproc.COLOR_RGB2GRAY);//カラー画像からグレースケール画像へ
-		grayImage.convertTo(grayImage, CvType.CV_64F);
-} else {
-	grayImage = singleChannelImage.clone();
-}
-		//正規化
-		 Core.normalize(grayImage, grayImage, 0,1, Core.NORM_MINMAX);
-		 
+		if (singleChannelImage.channels() > 1) {
+			// グレースケール変換
+			// 関数 cvtColor は，入力画像の色空間を別の色空間に変換します
+			Imgproc.cvtColor(singleChannelImage, grayImage, Imgproc.COLOR_RGB2GRAY);// カラー画像からグレースケール画像へ
+			grayImage.convertTo(grayImage, CvType.CV_64F);
+		} else {
+			grayImage = singleChannelImage.clone();
+			grayImage.convertTo(grayImage, CvType.CV_64F);
+		}
+		// 正規化
+		Core.normalize(grayImage, grayImage, 0, 1, Core.NORM_MINMAX);
+
 		// DFT 変換のサイズを計算
 		int m = Core.getOptimalDFTSize(grayImage.rows());
 		int n = Core.getOptimalDFTSize(grayImage.cols());
-		
+
 		Mat padded = new Mat(new Size(n, m), grayImage.type());
 
 		// 画像のまわりに境界を作成します．（入力画像、出力画像、以下で上下左右の各方向に，元の画像矩形から何ピクセル分の境界を作る必要があるかを指定）
@@ -68,13 +68,13 @@ if(singleChannelImage.channels()>1) {
 		Mat complexI2 = Mat.zeros(padded.size(), CvType.CV_64F);
 		Core.merge(planes, complexI);// 複数のシングルチャンネル配列からマルチチャンネル配列を作成．
 
-		// フーリエ変換 
+		// フーリエ変換
 		Core.dft(complexI, complexI2);
 		dst[0] = complexI2.clone();
-		
+
 	}
-	
-	public void getIDFT(Mat DFTChannelImage,Mat[] dst) {
+
+	public void getIDFT(Mat DFTChannelImage, Mat[] dst) {
 		List<Mat> planes = new ArrayList<Mat>();
 		// 逆フーリエ変換
 		Core.idft(DFTChannelImage, DFTChannelImage);
@@ -82,14 +82,13 @@ if(singleChannelImage.channels()>1) {
 		Core.split(DFTChannelImage, planes);
 		Core.normalize(planes.get(0), restoredImage, 0, 255, Core.NORM_MINMAX);
 		dst[0] = restoredImage.clone();
-	
 	}
 
 	public static void main(String[] args) throws Exception {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		File file = new File("input");// 入力画像
 		System.out.println(String.format("Read %s.", file.getName()));
-		
+
 		System.out.println(String.format("done."));
 	}
 }
