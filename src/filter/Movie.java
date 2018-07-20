@@ -27,13 +27,27 @@ public class Movie extends JPanel {
 	static int m_width;// 処理するイメージの大きさ
 	static int m_height;
 	static CreateFilter m_filter;// CreateFilterクラスのインスタンス
-	static ArrayList<Mat> m_input;// 初期フィルタ作成用画像例
-	static Mat[] m_filterFourier;// フィルタの分母、分子、初期フィルタ
-	static Mat[] m_updatefilter;// フィルタ更新のための分母、分子、フィルタ
+	ArrayList<Mat> m_input;// 初期フィルタ作成用画像例
+	Mat[] m_filterFourier;// フィルタの分母、分子、初期フィルタ
+	Mat[] m_updatefilter;// フィルタ更新のための分母、分子、フィルタ
 	
+	static int[] xy_old;
+	//デバッグ用
 	int count1 = 0;
 	
 	
+	public Movie(int width,int height) {
+		super();
+		m_width = width;
+		m_height = height;
+		m_filter = new CreateFilter(m_width, m_height);
+		m_input = new ArrayList<Mat>();
+		m_filterFourier = new Mat[3];
+		m_updatefilter = new Mat[3];
+		xy_old = new int[2];
+		xy_old[0] = m_width/2;
+		xy_old[1] = m_height/2;
+	}
 
 	public Movie() {
 		super();
@@ -41,6 +55,9 @@ public class Movie extends JPanel {
 		m_input = new ArrayList<Mat>();
 		m_filterFourier = new Mat[3];
 		m_updatefilter = new Mat[3];
+		xy_old = new int[2];
+		xy_old[0] = m_width/2;
+		xy_old[1] = m_height/2;
 	}
 
 	private BufferedImage getimage() {
@@ -97,14 +114,14 @@ public class Movie extends JPanel {
 		}
 	}
 
-	public static void initialize(Mat[] mat) {// Mat型の配列を初期化する
+	public void initialize(Mat[] mat) {// Mat型の配列を初期化する
 		for (int i = 0; i < mat.length; i++) {
 			mat[i] = Mat.zeros(m_width, m_height, CvType.CV_64FC3);
 		}
 	}
 
 	// 四角を書くためのメソッド
-	public static void drawsquare(Mat[] webcam_image, int x, int y, int width, int height) {
+	public void drawsquare(Mat[] webcam_image, int x, int y, int width, int height) {
 		// Imgproc.rectangle(Mat,四角の1つの頂点の座標,その対角線上にある頂点の座標,線の色, 線の幅, 線の種類, 0);
 		Imgproc.rectangle(webcam_image[0], new Point(x - width / 2, y - height / 2),
 				new Point(x + width / 2, y + height / 2), new Scalar(0, 0, 225), 8, 8, 0);
@@ -132,7 +149,7 @@ public class Movie extends JPanel {
 	}
 
 	public void get_filter_original(Mat[] webcam_img) {// カメラから得た画像（複数枚）からフィルタの元となる入力画像を得る
-		for (int i = 0; i < 13; i++) {
+		for (int i = 0; i < 12; i++) {
 			webcam_img[20 * (i + 1)].convertTo(webcam_img[20 * (i + 1)], CvType.CV_32SC3);
 			m_input.add(webcam_img[20 * (i + 1)].clone());
 			Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/intial_input/" + Integer.toString(i) + ".jpg",webcam_img[20 * (i + 1)]);
@@ -257,6 +274,12 @@ public class Movie extends JPanel {
 		m_filter.IDFT(output, output);
 
 		xy = max(output);
+		
+		/*if((xy_old[0]-xy[0])>(m_height/2) || (xy[0]-xy_old[0])>(m_height/2) || (xy_old[1]-xy[1])>(m_width/2) || (xy[1]-xy_old[1])>(m_width/2) ) {
+			xy = xy_old;
+		}else {
+			xy_old = xy;
+		}*/
 
 		//デバッグ
 		Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/output_tracking2/"+Integer.valueOf(count1)+".jpg", output[0]);
@@ -291,8 +314,8 @@ public class Movie extends JPanel {
 	}
 
 	public static void main(String arg[]) {
-		m_width = 216;
-		m_height = 384;
+		m_width = 360;
+		m_height = 640;
 		int count = 0;
 
 		// Load the native library.
@@ -329,25 +352,25 @@ public class Movie extends JPanel {
 				if (!webcam_image[0].empty()) {
 					// 元々0.3で、0.6で大体画面いっぱい
 					Imgproc.resize(webcam_image[0], webcam_image[0],
-							new Size(webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
+							new Size(webcam_image[0].size().width * 0.5, webcam_image[0].size().height * 0.5));
 					frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
 					if (count < 300) {// 初期フィルタを作成するための入力画像を得る
 						data[count] = Mat.zeros(m_width, m_height, CvType.CV_64FC3);
 						data[count] = webcam_image[0].clone();
-						drawsquare(webcam_image, webcam_image[0].width() / 2, webcam_image[0].height() / 2,108,108);
+						movie.drawsquare(webcam_image, webcam_image[0].width() / 2, webcam_image[0].height() / 2,m_width/2,m_width/2);
 						System.out.println("initial filter create....");
 					} else {
 						try {
 							if (count == 300) {
 								movie.get_filter_original(data);// クラス変数ArrayListのm_inputにフィルタ作成に用いる入力画像を格納する
-								movie.makeFilter(m_input);// クラス変数m_filterFourierに分母、分子、フィルタを格納
+								movie.makeFilter(movie.m_input);// クラス変数m_filterFourierに分母、分子、フィルタを格納
 								//movie.new_makeFilter(m_filterFourier, webcam_image);
 								System.out.println("filter create!!");
 							} else {
 								// フィルタを更新
 								//movie.new_makeFilter(m_updatefilter, webcam_image);
 								
-								input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC3);
+								/*input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC3);
 
 								ans_input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
 								
@@ -358,14 +381,14 @@ public class Movie extends JPanel {
 								m_filter.toFourier(webcam_image, ans_input);
 								
 								Core.mulSpectrums(ans_input[0], m_filterFourier[2], output[0], 0);
-								m_filter.IDFT(output, output);
+								m_filter.IDFT(output, output)
 
 								xy = max(output);
 								
-								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/output/"+Integer.valueOf(count)+".jpg", output[0]);
+								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/output/"+Integer.valueOf(count)+".jpg", output[0]);*/
 								
-								//answer= movie.tracking(webcam_image, m_filterFourier);
-								drawsquare(webcam_image,xy[1], xy[0],108, 108);
+								answer= movie.tracking(webcam_image, movie.m_filterFourier);
+								movie.drawsquare(webcam_image,answer[1], answer[0],m_width/2, m_width/2);
 								System.out.println("tracking now!");
 								System.out.println(answer[0]);
 								System.out.println(answer[1]);
