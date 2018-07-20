@@ -118,7 +118,7 @@ public class CreateFilter {
 
 		result[2] = Mat.zeros(width, height, CvType.CV_64FC2);// フィルタ
 		
-		add(result1,0.000000001,result1_new);
+		add(result1,0.0000000001,result1_new);
 
 		Core.divide(result2, result1_new, result[2]);
 
@@ -174,7 +174,6 @@ public class CreateFilter {
 																														// B
 		// ここで定数を足す 0.0???? F・F*+e フィルタの安定性を高めるため
 		
-		
 		Core.mulSpectrums(output_mat, Fourier_input_file[0], output_result, Core.DFT_COMPLEX_OUTPUT, true);// MOSSEフィルタ作成の式の分子(出力画像のフーリエ変換したMat、その複素共役、出力先、ROW、2番目を複素共役にするか否か
 
 		mult(output_result, 0.125, output_result);//分子
@@ -186,7 +185,7 @@ public class CreateFilter {
 		Core.add(output_result, result[1], Aia);// 分子
 		Core.add(input_result, result[0], Bia);// 分母
 
-		add(Bia,0.000000001,Bia_new);
+		add(Bia,0.0000000001,Bia_new);
 		
 		Core.divide(Aia, Bia_new, result_filter);
 
