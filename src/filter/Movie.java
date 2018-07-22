@@ -227,7 +227,6 @@ public class Movie extends JPanel {
 		Mat[] ans_input = new Mat[1];
 		ans_input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
 
-		// Mat output = Mat.zeros(width, height, CvType.CV_32FC3);
 		m_filter.toFourier(input, ans_input);
 
 		// 入力画像とフィルタと前の分子と分母を利用してフィルタの更新
@@ -282,7 +281,7 @@ public class Movie extends JPanel {
 		}*/
 
 		//デバッグ
-		Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/output_tracking2/"+Integer.valueOf(count1)+".jpg", output[0]);
+		Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/tracking/"+Integer.valueOf(count1)+".jpg", output[0]);
 		
 		count1++;
 		
@@ -338,10 +337,10 @@ public class Movie extends JPanel {
 		//int[] answer_new = new int[2];
 		
 		//デバッグ
-		Mat[] input = new Mat[1];
+		/*Mat[] input = new Mat[1];
 		Mat[] ans_input = new Mat[1];
 		Mat[] output = new Mat[1];
-		int[] xy = new int[2];
+		int[] xy = new int[2];*/
 
 		if (capture.isOpened()) {
 
