@@ -1,6 +1,8 @@
 package filter;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import javax.swing.JButton;
@@ -31,8 +33,8 @@ public class Tracking extends JPanel {
 	static ArrayList<ArrayList<Integer>> dsts2;
 	static ArrayList<ArrayList<Integer>> dsts3;
 	static ArrayList<ArrayList<Integer>> srcs;
-	
-	static //初期フィルタ
+
+	static // 初期フィルタ
 	Mat user1;
 	Mat user2;
 	Mat user3;
@@ -48,7 +50,7 @@ public class Tracking extends JPanel {
 		dsts1 = new ArrayList<ArrayList<Integer>>();
 		dsts2 = new ArrayList<ArrayList<Integer>>();
 		dsts3 = new ArrayList<ArrayList<Integer>>();
-		
+
 		user1 = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
 		user2 = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
 		user3 = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
@@ -58,10 +60,9 @@ public class Tracking extends JPanel {
 		return image;
 	}
 
-	private void setimage(BufferedImage newimage) {
-		image = newimage;
-		return;
-	}
+	/*
+	 * private void setimage(BufferedImage newimage) { image = newimage; return; }
+	 */
 
 	/**
 	 * Converts/writes a Mat into a BufferedImage.
@@ -134,7 +135,17 @@ public class Tracking extends JPanel {
 		return img2;
 	}
 
+	private static boolean checkBeforeWritefile(File file) {
+		if (file.exists()) {
+			if (file.isFile() && file.canWrite()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	static int cnt = 0;
+	static boolean lock = false;
 
 	public static void main(String arg[]) {
 		// Load the native library.
@@ -156,9 +167,7 @@ public class Tracking extends JPanel {
 		webcam_image2[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC3);
 
 		BufferedImage img;
-		BufferedImage img2;
 		BufferedImage imgRev;
-		int count = 0;
 
 		VideoCapture capture = new VideoCapture(0);
 		JButton button1 = new JButton("user1");
@@ -177,16 +186,19 @@ public class Tracking extends JPanel {
 
 		button1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
+				//
+				lock = true;
+
 				JLabel msg = new JLabel("user1の物体の登録を開始します。(10秒間)");
 				JOptionPane.showMessageDialog(frame, msg);
 				Timer timer = new Timer(false);
 
 				TimerTask task = new TimerTask() {
 					int[] answer = new int[2];
+					// int miss = 0;//3回間違えた場合は最初からやり直す
 
 					@Override
 					public void run() {
-						// ここに定期実行させたい処理を記述
 						if (cnt < 13) {
 							Imgcodecs.imwrite(
 									"/Users/Karin.T/Documents/3pro/project_c/user1/" + String.valueOf(cnt) + ".png",
@@ -235,6 +247,7 @@ public class Tracking extends JPanel {
 							ArrayList<Mat> planes2 = new ArrayList<Mat>();
 							Mat output = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
 
+							m_movie.m_filterFourier[2].convertTo(m_movie.m_filterFourier[2], CvType.CV_64F);
 							Core.mulSpectrums(ans_input[0], tracking.m_movie.m_filterFourier[2], output, 0);
 
 							Core.idft(output, output);
@@ -244,7 +257,7 @@ public class Tracking extends JPanel {
 
 							Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user1/debug.jpg", restoredImage);
 							System.out.println("done!");
-							// デバッグ終了//少しぼけているけど中心に一番反応している
+							// デバッグ終了→少しぼけているけど中心に一番反応している
 
 							JLabel end = new JLabel("次に物体の軌跡の登録をします(10秒)");
 							JOptionPane.showMessageDialog(frame, end);
@@ -264,6 +277,23 @@ public class Tracking extends JPanel {
 							dst.add(answer[1]);
 							dsts1.add(dst);
 
+							try {
+								File file = new File("/Users/Karin.T/Documents/3pro/project_c/user1/track1.txt");
+
+								if (checkBeforeWritefile(file)) {
+									FileWriter filewriter = new FileWriter(file, true);
+
+									filewriter.write(answer[0] + "\n");
+									filewriter.write(answer[1] + "\n");
+
+									filewriter.close();
+								} else {
+									System.out.println("ファイルに書き込めません");
+								}
+							} catch (IOException e) {
+								System.out.println(e);
+							}
+
 							System.out.println("tracking now!");
 							System.out.println(cnt);
 							System.out.println(answer[0]);
@@ -271,6 +301,7 @@ public class Tracking extends JPanel {
 
 						} else if (cnt == 34) {
 							timer.cancel();
+							cnt = 0;
 							System.out.println(dsts1);
 							System.out.println("exit");
 						}
@@ -329,9 +360,9 @@ public class Tracking extends JPanel {
 				// 画像2,3まいとって、色が違ったら認証できません 見たことある色だったら 軌跡を描いてください。
 				JLabel msg = new JLabel("物体認証を開始します(3秒)");
 				JOptionPane.showMessageDialog(frame, msg);
-				
+
 				Mat[] filter = new Mat[3];
-				
+
 				Timer timer = new Timer(false);
 				TimerTask task = new TimerTask() {
 					int cnt = 1;
@@ -339,52 +370,53 @@ public class Tracking extends JPanel {
 					@Override
 					public void run() {
 						int[] answer = new int[2];
-						if(cnt<4) {
-						//最初に3枚画像をとる
-						Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/open/" + String.valueOf(cnt) + ".png",
-								webcam_image[0]);
+						if (cnt < 4) {
+							// 最初に3枚画像をとる
+							Imgcodecs.imwrite(
+									"/Users/Karin.T/Documents/3pro/project_c/open/" + String.valueOf(cnt) + ".png",
+									webcam_image[0]);
 
-						}else if (cnt == 4) {
-							//物体認証
-							
-							//ここで保存されている画像と入力画像のRGB値を比較（どのユーザーか値等を返してくれるとありがたい）
-							//trueだった場合↓
+						} else if (cnt == 4) {
+							// 物体認証
+
+							// ここで保存されている画像と入力画像のRGB値を比較（どのユーザーか値等を返してくれるとありがたい）
+							// trueだった場合↓
 							JLabel end = new JLabel("物体認証に成功しました。次に物体の軌跡を描いて下さい");
 							JOptionPane.showMessageDialog(frame, end);
-							//falseだった場合、「もう一度やり直してください」と表示し、cntを1にして最初からやり直す
+							// falseだった場合、「もう一度やり直してください」と表示し、cntを1にして最初からやり直す
 
-						} else if(cnt>4 && cnt<25) {
-							//動作認証（ここではトラッキングをして座標を取得）
+						} else if (cnt > 4 && cnt < 25) {
+							// 動作認証（ここではトラッキングをして座標を取得）
 							try {
-								//if文でどのフィルターをcloneするか分ける（今はuser1）
+								// if文でどのフィルターをcloneするか分ける（今はuser1）
 								filter[2] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
 								filter[2] = user1.clone();
 								answer = tracking.m_movie.tracking(webcam_image, filter);
-								
-								//四角描写
+
+								// 四角描写
 								// tracking.m_movie.drawsquare(webcam_image, answer[1], answer[0], m_width / 2,
 								// m_width / 2);
-								
+
 								ArrayList<Integer> src = new ArrayList<>();
 								src.add(answer[0]);
 								src.add(answer[1]);
 								srcs.add(src);
-								
+
 							} catch (IOException e) {
 								// TODO 自動生成された catch ブロック
 								e.printStackTrace();
 							}
-							
-						} else if(cnt==25) {
-							//ここで登録した軌跡と、今回とった軌跡を比較.
-					
-							//trueの場合
+
+						} else if (cnt == 25) {
+							// ここで登録した軌跡と、今回とった軌跡を比較.
+
+							// trueの場合
 							JLabel end = new JLabel("動作認証に成功しました。ロックを解除します");
 							JOptionPane.showMessageDialog(frame, end);
-							//falseの場合、「やり直してください」と出力してcntを5に設定し直して軌跡を取り直す
-							
-						}else if(cnt>25) {
-							//タイマー停止。解除終了
+							// falseの場合、「やり直してください」と出力してcntを5に設定し直して軌跡を取り直す
+
+						} else if (cnt > 25) {
+							// タイマー停止。解除終了
 							timer.cancel();
 							System.out.println("OPEN!!");
 						}
