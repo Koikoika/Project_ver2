@@ -155,17 +155,103 @@ public class Movie extends JPanel {
 			Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/intial_input/" + Integer.toString(i) + ".jpg",webcam_img[20 * (i + 1)]);
 		}
 	}
+	
+	//グレースケール化した画像の各画素の常用対数をとる
+	public static void log_10(Mat[] src,Mat[] dst) {
+		double[] data = new double[1];
+		for (int i = 0; i < src[0].width(); i++) {
+			for (int j = 0; j < src[0].height(); j++) {
+				data = src[0].get(j, i);
+				Math.log10(data[0]);
+				dst[0].put(i, j, data);
+			}
+		}
+	}
+	
+	
+	
+	public static void div(Mat[] src,Mat[] dst,double number) {
+		double[] data = new double[1];
+		for (int i = 0; i < src[0].width(); i++) {
+			for (int j = 0; j < src[0].height(); j++) {
+				data = src[0].get(j, i);
+				data[0] = data[0]/number;
+				dst[0].put(i, j, data);
+			}
+		}
+	}
+	
+	public static void sub(Mat[] src,Mat[] dst,double number) {
+		double[] data = new double[1];
+		for (int i = 0; i < src[0].width(); i++) {
+			for (int j = 0; j < src[0].height(); j++) {
+				data = src[0].get(j, i);
+				data[0] = data[0]-number;
+				dst[0].put(i, j, data);
+			}
+		}
+	}
+	
+	public static double mean(Mat src) {//平均値
+		double[] data = new double[1];
+		int sum = 0;
+		for (int i = 0; i < src.width(); i++) {
+			for (int j = 0; j < src.height(); j++) {
+				data = src.get(j, i);
+				sum += data[0];
+			}
+		}
+		return sum/(src.width()* src.height());
+	}
+	
+	public static double adv(Mat src) {//標準偏差
+		Core.multiply(src, src, src);
+		double a = mean(src);
+		return Math.sqrt(a);
+	}
+	
+	public static void newinput(Mat[] input_src,Mat[] dst) {
+	
+		Mat E =  Mat.ones(input_src[0].size(), CvType.CV_32FC1);
+		Mat[] grayImage = new Mat[1];
+		grayImage[0] = Mat.zeros(input_src[0].size(), CvType.CV_32FC1);
+		//入力画像のグレースケール化
+		input_src[0].convertTo(input_src[0], CvType.CV_32F);
+		
+		Imgproc.cvtColor(input_src[0], grayImage[0], Imgproc.COLOR_RGB2GRAY);// カラー画像からグレースケール画像へ
+		//grayImage[0].convertTo(grayImage[0], CvType.CV_64F);
+		
+		//対数変換をする
+		Core.add(grayImage[0], E, grayImage[0]);
+		log_10(grayImage,grayImage);
+		
+		//平均値を求める
+		double ave = mean(grayImage[0]);
+		
+		//標準偏差を求める
+		sub(grayImage,grayImage,ave);
+		double adv = adv(grayImage[0]);
+		
+		sub(grayImage,grayImage,ave);
+		div(grayImage,grayImage,adv);
+		
+		dst[0].convertTo(dst[0], CvType.CV_64F);
+		
+		dst[0] = grayImage[0].clone();
+	}
+	
 
 	public void makeFilter(ArrayList<Mat> m_input) throws IOException {// 複数枚の入力画像と出力画像から初期フィルタを作成する
 		Mat[] ans_output = new Mat[1];
 		Mat[] input = new Mat[m_input.size()];
 		Mat[] output = new Mat[m_input.size()];
 		Mat[] ans_input = new Mat[1];
-
+		Mat[] new_input = new Mat[1];
+		
 		ans_output[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
-
 		ans_input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
-
+		new_input[0] = Mat.zeros(m_width, m_height, CvType.CV_32FC1);
+		
 		// 出力画像を作成し、それをフーリエ変換する
 		int[] data = new int[4];
 		data[0] = m_height / 2;
@@ -190,9 +276,12 @@ public class Movie extends JPanel {
 			// 入力画像のフーリエ変換
 			img_input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC3);
 			img_input[0] = m_input.get(i).clone();
-			img_input[0].convertTo(img_input[0], CvType.CV_32FC3);
+			
+			newinput(img_input,new_input);
+			
+			//new_input[0].convertTo(new_input[0], CvType.CV_32FC1);
 
-			m_filter.toFourier(img_input, ans_input);
+			m_filter.toFourier(new_input, ans_input);
 			input[i] = ans_input[0].clone();
 		}
 
@@ -204,7 +293,7 @@ public class Movie extends JPanel {
 		 Core.mulSpectrums(input[0], m_filterFourier[2], debug, 0);
 		 
 	     ArrayList<Mat> planes = new ArrayList<Mat>();
-		 
+
 		 Core.idft(debug, debug); 
 		 Mat restoredImage = Mat.zeros(m_width, m_height,CvType.CV_64FC1);// 0で初期化
 		 Core.split(debug, planes);
@@ -221,7 +310,8 @@ public class Movie extends JPanel {
 		// 入力画像をフーリエ変換しやすいように変換後、フーリエ変換
 		Mat[] input = new Mat[1];
 		webcam_img[0].convertTo(webcam_img[0], CvType.CV_32FC3);
-		input[0] = Mat.zeros(m_width, m_height, CvType.CV_32FC3);
+		input[0] = Mat.zeros(m_width, m_height, CvType.CV_32FC1);
+		newinput(webcam_img,input);
 		input[0] = webcam_img[0].clone();
 
 		Mat[] ans_input = new Mat[1];
@@ -262,13 +352,17 @@ public class Movie extends JPanel {
 		Mat[] output = new Mat[1];
 		output[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
 		
+		Mat[] new_input = new Mat[1];
+		new_input[0] = Mat.zeros(m_width, m_height, CvType.CV_32FC1);
+		
 		int[] xy = new int[2];
 
-		webcam_img[0].convertTo(webcam_img[0], CvType.CV_32FC3);
-		m_filter.toFourier(webcam_img, ans_input);
-
+		webcam_img[0].convertTo(webcam_img[0], CvType.CV_64FC3);
+		newinput(webcam_img,new_input);
+		m_filter.toFourier(new_input, ans_input);
+		ans_input[0].convertTo(ans_input[0], CvType.CV_64F);
 		// 入力画像、出力画像をフーリエ変換して出力されたフィルタを逆フーリエ変換して最大画素値の座標を出力
-		//
+		
 		Core.mulSpectrums(ans_input[0], new_filter[2], output[0], 0);
 		m_filter.IDFT(output, output);
 

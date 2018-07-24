@@ -12,7 +12,7 @@ import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
-import sample.OpenCVFFT2D;
+import filter.OpenCVFFT2D;
 
 public class CreateFilter {
 	static int width;// 画像サイズ y
@@ -102,16 +102,14 @@ public class CreateFilter {
 		Mat Fresult = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
 
 		for (int i = 0; i < tocount; i++) {
-			Fourier_output_mat[i].convertTo(Fourier_output_mat[0], CvType.CV_64FC2);
-
 			Core.mulSpectrums(Fourier_input_mat[0], Fourier_input_mat[0], Fresult, Core.DFT_COMPLEX_OUTPUT, true);// MOSSEフィルタ作成の式の分母(出力画像のフーリエ変換したMat、その複素共役、出力先、ROW、2番目を複素共役にするか否か)
+			
 			Core.add(result1, Fresult, result1);// 分母 B（控える）
 			Fresult = Mat.zeros(width, height, CvType.CV_64FC2);// 0で初期化
 
 			Core.mulSpectrums(Fourier_output_mat[0], Fourier_input_mat[0], Gstar, Core.DFT_COMPLEX_OUTPUT, true);// MOSSEフィルタ作成の式の分子(出力画像のフーリエ変換したMat、その複素共役、出力先、ROW、2番目を複素共役にするか否か
 			Core.add(result2, Gstar, result2);// 分子 A（控える）
 			Gstar = Mat.zeros(width, height, CvType.CV_64FC2);
-
 		}
 		result[0] = result1.clone();// 分母
 		result[1] = result2.clone();// 分子
@@ -121,6 +119,7 @@ public class CreateFilter {
 		add(result1,0.0000000001,result1_new);
 
 		Core.divide(result2, result1_new, result[2]);
+		//result[2].convertTo(result[2], CvType.CV_64FC2);
 
 		// デバッグ用
 		/*
