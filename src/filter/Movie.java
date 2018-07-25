@@ -124,10 +124,10 @@ public class Movie extends JPanel {
 	public void drawsquare(Mat[] webcam_image, int x, int y, int width, int height) {
 		// Imgproc.rectangle(Mat,四角の1つの頂点の座標,その対角線上にある頂点の座標,線の色, 線の幅, 線の種類, 0);
 		Imgproc.rectangle(webcam_image[0], new Point(x - width / 2, y - height / 2),
-				new Point(x + width / 2, y + height / 2), new Scalar(0, 0, 225), 8, 8, 0);
+				new Point(x + width / 2, y + height / 2), new Scalar(0, 0,  0), 2, 2, 0);
 		Imgproc.line(webcam_image[0], new Point(x, y - height / 2), new Point(x, y + height / 2),
-				new Scalar(0, 0, 225));// 縦
-		Imgproc.line(webcam_image[0], new Point(x - width / 2, y), new Point(x + width / 2, y), new Scalar(0, 0, 225));// 横
+				new Scalar(0, 0,0 ));// 縦
+		Imgproc.line(webcam_image[0], new Point(x - width / 2, y), new Point(x + width / 2, y), new Scalar(0, 0, 0));// 横
 
 	}
 
@@ -150,9 +150,9 @@ public class Movie extends JPanel {
 
 	public void get_filter_original(Mat[] webcam_img) {// カメラから得た画像（複数枚）からフィルタの元となる入力画像を得る
 		for (int i = 0; i < 12; i++) {
-			webcam_img[20 * (i + 1)].convertTo(webcam_img[20 * (i + 1)], CvType.CV_32SC3);
-			m_input.add(webcam_img[20 * (i + 1)].clone());
-			Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/intial_input/" + Integer.toString(i) + ".jpg",webcam_img[20 * (i + 1)]);
+			webcam_img[3 * (i + 1)].convertTo(webcam_img[3 * (i + 1)], CvType.CV_32SC3);
+			m_input.add(webcam_img[3* (i + 1)].clone());
+			Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/intial_input/" + Integer.toString(i) + ".jpg",webcam_img[3 * (i + 1)]);
 		}
 	}
 	
@@ -221,7 +221,20 @@ public class Movie extends JPanel {
 		Imgproc.cvtColor(input_src[0], grayImage[0], Imgproc.COLOR_RGB2GRAY);// カラー画像からグレースケール画像へ
 		//grayImage[0].convertTo(grayImage[0], CvType.CV_64F);
 		
+		if(grayImage[0].size() != E.size()) {
+			Imgproc.resize(grayImage[0], grayImage[0],new Size(E.size().width, E.size().height));
+		}
+		if(grayImage[0].type() != E.type()) {
+			grayImage[0].convertTo(grayImage[0], E.type());
+		}
+		
 		//対数変換をする
+		/*System.out.println(grayImage[0].size());
+		System.out.println(E.size());
+		
+		System.out.println(grayImage[0].type());
+		System.out.println(E.type());*/
+		
 		Core.add(grayImage[0], E, grayImage[0]);
 		log_10(grayImage,grayImage);
 		
@@ -235,9 +248,9 @@ public class Movie extends JPanel {
 		sub(grayImage,grayImage,ave);
 		div(grayImage,grayImage,adv);
 		
-		dst[0].convertTo(dst[0], CvType.CV_64F);
-		
 		dst[0] = grayImage[0].clone();
+	
+		dst[0].convertTo(dst[0], CvType.CV_64F);
 	}
 	
 
@@ -250,7 +263,7 @@ public class Movie extends JPanel {
 		
 		ans_output[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
 		ans_input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
-		new_input[0] = Mat.zeros(m_width, m_height, CvType.CV_32FC1);
+		new_input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC1);
 		
 		// 出力画像を作成し、それをフーリエ変換する
 		int[] data = new int[4];
@@ -310,7 +323,7 @@ public class Movie extends JPanel {
 		// 入力画像をフーリエ変換しやすいように変換後、フーリエ変換
 		Mat[] input = new Mat[1];
 		webcam_img[0].convertTo(webcam_img[0], CvType.CV_32FC3);
-		input[0] = Mat.zeros(m_width, m_height, CvType.CV_32FC1);
+		input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC1);
 		newinput(webcam_img,input);
 		input[0] = webcam_img[0].clone();
 
@@ -353,7 +366,7 @@ public class Movie extends JPanel {
 		output[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
 		
 		Mat[] new_input = new Mat[1];
-		new_input[0] = Mat.zeros(m_width, m_height, CvType.CV_32FC1);
+		new_input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC1);
 		
 		int[] xy = new int[2];
 
@@ -407,8 +420,8 @@ public class Movie extends JPanel {
 	}
 
 	public static void main(String arg[]) {
-		m_width = 360;
-		m_height = 640;
+		m_width = 216;
+		m_height = 384;
 		int count = 0;
 
 		// Load the native library.
@@ -419,6 +432,7 @@ public class Movie extends JPanel {
 		Panel panel = new Panel();
 		frame.setContentPane(panel);
 		frame.setVisible(true);
+		
 		Mat[] webcam_image = new Mat[1];
 		webcam_image[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC3);
 		BufferedImage img;
@@ -445,7 +459,7 @@ public class Movie extends JPanel {
 				if (!webcam_image[0].empty()) {
 					// 元々0.3で、0.6で大体画面いっぱい
 					Imgproc.resize(webcam_image[0], webcam_image[0],
-							new Size(webcam_image[0].size().width * 0.5, webcam_image[0].size().height * 0.5));
+							new Size(webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
 					frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
 					if (count < 300) {// 初期フィルタを作成するための入力画像を得る
 						data[count] = Mat.zeros(m_width, m_height, CvType.CV_64FC3);
@@ -462,23 +476,6 @@ public class Movie extends JPanel {
 							} else {
 								// フィルタを更新
 								//movie.new_makeFilter(m_updatefilter, webcam_image);
-								
-								/*input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC3);
-
-								ans_input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
-								
-								output[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
-								
-								
-								webcam_image[0].convertTo(webcam_image[0], CvType.CV_32FC3);
-								m_filter.toFourier(webcam_image, ans_input);
-								
-								Core.mulSpectrums(ans_input[0], m_filterFourier[2], output[0], 0);
-								m_filter.IDFT(output, output)
-
-								xy = max(output);
-								
-								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/output/"+Integer.valueOf(count)+".jpg", output[0]);*/
 								
 								answer= movie.tracking(webcam_image, movie.m_filterFourier);
 								movie.drawsquare(webcam_image,answer[1], answer[0],m_width/2, m_width/2);
