@@ -31,10 +31,10 @@ public class Tracking extends JPanel {
 	static Movie m_movie;
 
 	// 座標をユーザーごとに保存
-	static ArrayList<ArrayList<Integer>> dsts1;
-	static ArrayList<ArrayList<Integer>> dsts2;
-	static ArrayList<ArrayList<Integer>> dsts3;
-	static ArrayList<ArrayList<Integer>> srcs;
+	static ArrayList<Integer> dst1;
+	static ArrayList<Integer> dst2;
+	static ArrayList<Integer> dst3;
+	static ArrayList<Integer> src;
 
 	static // 初期フィルタ
 	Mat user1;
@@ -49,9 +49,10 @@ public class Tracking extends JPanel {
 		super();
 		m_movie = new Movie(m_width, m_height);
 
-		dsts1 = new ArrayList<ArrayList<Integer>>();
-		dsts2 = new ArrayList<ArrayList<Integer>>();
-		dsts3 = new ArrayList<ArrayList<Integer>>();
+		dst1 = new ArrayList<>();
+		dst2 = new ArrayList<>();
+		dst3 = new ArrayList<>();
+		src = new ArrayList<>();
 
 		user1 = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
 		user2 = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
@@ -147,6 +148,41 @@ public class Tracking extends JPanel {
 	}
 
 	static int cnt = 0;
+
+	// ユーザーの番号
+	// static int usernum=0;
+
+	// 画像読み込み
+	public static double[] Readimg(String img) {
+
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+		// 画像の読み込み (第二引数を0にするとグレースケールで読み込み)
+		Mat im = Imgcodecs.imread(img, 0); // 入力画像の取得
+
+		int cols = im.cols();
+		int rows = im.rows();
+		int size = cols * rows;
+		double[] data = new double[size];
+
+		int y;
+		int x;
+		int count = 0;
+
+		// rows(行)の数分回す
+		for (y = 0; y < rows; y++) {
+
+			// cols(列)の数だけ読み込む
+			for (x = 0; x < cols; x++) {
+				double[] d = im.get(y, x);
+				data[count] = d[0];
+				// System.out.println(data[count]);
+				count++;
+
+			}
+		}
+		return data;
+	}
+
 	static boolean lock = false;
 
 	public static void main(String arg[]) {
@@ -167,6 +203,10 @@ public class Tracking extends JPanel {
 
 		Mat[] webcam_image2 = new Mat[1];// ウィンド表示用
 		webcam_image2[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC3);
+
+		NearestNeighbor1 nearestNeighbor1 = new NearestNeighbor1();
+		NearestNeighbor2 nearestNeighbor2 = new NearestNeighbor2();
+		nearestNeighbor1.learn(4, Readimg("/Users/kannomaki/Documents/3pro/prj/def/phone.png"));
 
 		BufferedImage img;
 		BufferedImage imgRev;
@@ -274,10 +314,9 @@ public class Tracking extends JPanel {
 							// tracking.m_movie.drawsquare(webcam_image, answer[1], answer[0], m_width / 2,
 							// m_width / 2);
 							// 保存
-							ArrayList<Integer> dst = new ArrayList<>();
-							dst.add(answer[0]);
-							dst.add(answer[1]);
-							dsts1.add(dst);
+
+							dst1.add(answer[0]);
+							dst1.add(answer[1]);
 
 							try {
 								File file = new File("/Users/Karin.T/Documents/3pro/project_c/user1/track1.txt");
@@ -304,7 +343,7 @@ public class Tracking extends JPanel {
 						} else if (cnt == 34) {
 							timer.cancel();
 							cnt = 0;
-							System.out.println(dsts1);
+							System.out.println(dst1);
 							System.out.println("exit");
 						}
 						cnt++;
@@ -338,7 +377,7 @@ public class Tracking extends JPanel {
 						if (!webcam_image[0].empty()) {
 							// 元々0.3で、0.6で大体画面いっぱい
 							Imgproc.resize(webcam_image[0], webcam_image[0],
-									new Size(webcam_image[0].size().width * 0.6, webcam_image[0].size().height * 0.6));
+									new Size(webcam_image[0].size().width * 0.4, webcam_image[0].size().height * 0.4));
 							frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
 
 							webcam_image2[0] = webcam_image[0].clone();// 表示用
@@ -415,10 +454,9 @@ public class Tracking extends JPanel {
 										// tracking.m_movie.drawsquare(webcam_image, answer[1], answer[0], m_width / 2,
 										// m_width / 2);
 										// 保存
-										ArrayList<Integer> dst = new ArrayList<>();
-										dst.add(answer[0]);
-										dst.add(answer[1]);
-										dsts2.add(dst);
+
+										dst2.add(answer[0]);
+										dst2.add(answer[1]);
 
 										try {
 											File file = new File(
@@ -488,10 +526,9 @@ public class Tracking extends JPanel {
 				if (capture.isOpened()) {
 
 					Timer timer = new Timer(false);
-					
 
 					TimerTask task = new TimerTask() {
-						
+
 						File file = new File("/Users/Karin.T/Documents/3pro/project_c/user3/track3.txt");
 						int[] answer = new int[2];
 						// int miss = 0;//3回間違えた場合は最初からやり直す
@@ -504,7 +541,7 @@ public class Tracking extends JPanel {
 
 							capture.read(webcam_image[0]);
 							Imgproc.resize(webcam_image[0], webcam_image[0],
-									new Size(webcam_image[0].size().width * 0.6, webcam_image[0].size().height * 0.6));
+									new Size(webcam_image[0].size().width * 0.4, webcam_image[0].size().height * 0.4));
 							frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
 
 							if (cnt < 13) {
@@ -518,7 +555,6 @@ public class Tracking extends JPanel {
 								input.add(webcam_image[0]);
 
 								System.out.println("initial filter create....");
-								System.out.println(cnt);
 								// movie.get_filter_original(data1);
 							} else if (cnt == 13) {
 								try {
@@ -533,8 +569,17 @@ public class Tracking extends JPanel {
 								Rect roi = new Rect(m_height / 2 - m_width / 4, m_width / 2 - m_width / 4, m_width / 2,
 										m_width / 2);
 								Mat trim3 = new Mat(input.get(4), roi);
+
 								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user3/input/trim3.jpg",
 										trim3);
+
+								// 保存した画像を学習させる
+								nearestNeighbor1.learn(3,
+										Readimg("/Users/Karin.T/Documents/3pro/project_c/user3/input/trim3.jpg"));
+
+								// デバッグ
+								// System.out.println("学習させました");
+
 								tracking.user3 = tracking.m_movie.m_filterFourier[2].clone();
 								System.out.println("filter create!!");
 
@@ -585,16 +630,13 @@ public class Tracking extends JPanel {
 								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user3/tracking/"
 										+ String.valueOf(cnt) + ".png", webcam_image[0]);
 
-								ArrayList<Integer> dst = new ArrayList<>();
-								dst.add(answer[0]);
-								dst.add(answer[1]);
-								dsts3.add(dst);
+								dst3.add(answer[0]);
+								dst3.add(answer[1]);
 
 								try {
-									
 
 									if (checkBeforeWritefile(file)) {
-										FileWriter filewriter = new FileWriter(file,true);
+										FileWriter filewriter = new FileWriter(file, true);
 
 										filewriter.write(answer[0] + "\n");
 										filewriter.write(answer[1] + "\n");
@@ -608,15 +650,15 @@ public class Tracking extends JPanel {
 								}
 
 								System.out.println("tracking now!");
-								System.out.println(cnt);
 								System.out.println(answer[0]);
 								System.out.println(answer[1]);
 
 							} else if (cnt == 34) {
 								timer.cancel();
 								cnt = 0;
-								System.out.println(dsts3);
-								System.out.println("登録完了");
+								System.out.println(dst3);
+								JLabel end = new JLabel("登録完了");
+								JOptionPane.showMessageDialog(frame, end);
 							}
 							System.out.println(cnt);
 							cnt++;
@@ -624,10 +666,13 @@ public class Tracking extends JPanel {
 							img = matToBufferedImage(webcam_image[0]);
 							imgRev = createMirrorImage(img);// matからイメージに変換してから反転させる
 							panel.setimage(imgRev);
-
 						}
 					};
 					timer.schedule(task, 0, 700);
+
+					// ここで軌道を学習させる
+					nearestNeighbor2.learn(3, dst3);
+
 				} else {
 					System.out.println(" --(!) No captured frame -- ");
 				}
@@ -654,15 +699,33 @@ public class Tracking extends JPanel {
 							Imgcodecs.imwrite(
 									"/Users/Karin.T/Documents/3pro/project_c/open/" + String.valueOf(cnt) + ".png",
 									webcam_image[0]);
+							// 赤枠の画像保存
+							Rect roi = new Rect(m_height / 2 - m_width / 4, m_width / 2 - m_width / 4, m_width / 2,
+									m_width / 2);
+							Mat trim = new Mat(webcam_image[0], roi);
+							Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/open/trim.jpg", trim);
 
 						} else if (cnt == 4) {
 							// 物体認証
 
 							// ここで保存されている画像と入力画像のRGB値を比較（どのユーザーか値等を返してくれるとありがたい）
-							// trueだった場合↓
-							JLabel end = new JLabel("物体認証に成功しました。次に物体の軌跡を描いて下さい");
-							JOptionPane.showMessageDialog(frame, end);
-							// falseだった場合、「もう一度やり直してください」と表示し、cntを1にして最初からやり直す
+							String openimg = "/Users/Karin.T/Documents/3pro/project_c/open/trim.jpg";
+							int ansnum = nearestNeighbor1.trial(Readimg(openimg));
+
+							// デバッグ
+							System.out.println(ansnum);
+
+							if (ansnum == 1 || ansnum == 2 || ansnum == 3) {
+								JLabel end = new JLabel("物体認証に成功しました。次に物体の軌跡を描いて下さい");
+								JOptionPane.showMessageDialog(frame, end);
+								JLabel msg = new JLabel("動かしてください");
+								JOptionPane.showMessageDialog(frame, msg);
+							} else {
+								// falseだった場合、「もう一度やり直してください」と表示し、cntを1にして最初からやり直す
+								JLabel end = new JLabel("もう一度やり直してください");
+								JOptionPane.showMessageDialog(frame, end);
+								cnt = 1;
+							}
 
 						} else if (cnt > 4 && cnt < 25) {
 							// 動作認証（ここではトラッキングをして座標を取得）
@@ -676,10 +739,11 @@ public class Tracking extends JPanel {
 								// tracking.m_movie.drawsquare(webcam_image, answer[1], answer[0], m_width / 2,
 								// m_width / 2);
 
-								ArrayList<Integer> src = new ArrayList<>();
 								src.add(answer[0]);
 								src.add(answer[1]);
-								srcs.add(src);
+
+								System.out.println(answer[0]);
+								System.out.println(answer[1]);
 
 							} catch (IOException e) {
 								// TODO 自動生成された catch ブロック
@@ -688,17 +752,25 @@ public class Tracking extends JPanel {
 
 						} else if (cnt == 25) {
 							// ここで登録した軌跡と、今回とった軌跡を比較.
+							int ansnum2 = nearestNeighbor2.trial(src);
+							System.out.println(ansnum2);
 
 							// trueの場合
-							JLabel end = new JLabel("動作認証に成功しました。ロックを解除します");
-							JOptionPane.showMessageDialog(frame, end);
-							// falseの場合、「やり直してください」と出力してcntを5に設定し直して軌跡を取り直す
-
+							if (ansnum2 != 0) {
+								JLabel end = new JLabel("動作認証に成功しました。ロックを解除します");
+								JOptionPane.showMessageDialog(frame, end);
+							} else {
+								// falseの場合、「やり直してください」と出力してcntを5に設定し直して軌跡を取り直す
+								JLabel end = new JLabel("やり直してください");
+								JOptionPane.showMessageDialog(frame, end);
+								cnt = 5;
+							}
 						} else if (cnt > 25) {
 							// タイマー停止。解除終了
 							timer.cancel();
 							System.out.println("OPEN!!");
 						}
+						System.out.println(cnt);
 						cnt++;
 					}
 				};
@@ -707,25 +779,23 @@ public class Tracking extends JPanel {
 			}
 		});
 
-		/*if (capture.isOpened()) {
+		if (capture.isOpened()) {
 			while (true) {
-
 				capture.read(webcam_image[0]);
 				if (!webcam_image[0].empty()) {
-
+					
 					// 元々0.3で、0.6で大体画面いっぱい
 					Imgproc.resize(webcam_image[0], webcam_image[0],
-							new Size(webcam_image[0].size().width * 0.6, webcam_image[0].size().height * 0.6));
+							new Size(webcam_image[0].size().width * 0.4, webcam_image[0].size().height * 0.4));
 					frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
-					
+					// Button obj = new Button();
+					// obj.count++;
+					// img2=matToBufferedImage(webcam_image[0]);
+
 					webcam_image2[0] = webcam_image[0].clone();
 					// 四角描写
 					m_movie.drawsquare(webcam_image2, webcam_image2[0].width() / 2, webcam_image2[0].height() / 2,
 							m_width / 2, m_width / 2);
-					
-					if(webcam_image2[0].type() != 16) {
-						webcam_image2[0].convertTo(webcam_image2[0], 16);
-					}
 					img = matToBufferedImage(webcam_image2[0]);
 					imgRev = createMirrorImage(img);// matからイメージに変換してから反転させる
 					panel.setimage(imgRev);
@@ -735,7 +805,7 @@ public class Tracking extends JPanel {
 					System.out.println(" --(!) No captured frame -- ");
 				}
 			}
-		}*/
+		}
 
 		return;
 	}
