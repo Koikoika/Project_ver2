@@ -19,14 +19,14 @@ public class Filter {
 	
 	public static void main(String[] args) throws IOException {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		String input = "img/0500.jpg";	// 入力画像
+		String input = "/Users/Karin.T/Documents/3pro/Girl/img/0500.jpg";	// 入力画像
 		
 		OpenCVFFT2D fft = new OpenCVFFT2D(input);
 		Mat[] F = new Mat[1];
 		F[0] = Mat.zeros(width, height, CvType.CV_64FC2);
 		fft.getMagImg(F);//フーリエ変換後(Mat型)
         
-	    String output = "result_Girl500.jpg";// フィルタの取得
+	    String output = "/Users/Karin.T/Documents/3pro/Girl/result_Filter/result_Girl500.jpg";// フィルタの取得
 	    double[] data = new double[3];
 	    
 	    //フィルターをフーリエ変換する
@@ -44,7 +44,7 @@ public class Filter {
         
         Core.normalize(planes.get(0), restoredImage, 0, 255, Core.NORM_MINMAX);
         
-	    Imgcodecs.imwrite("result500.jpg", restoredImage);			// 出力画像の保存
+	    Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/Girl/Result/result500.jpg", restoredImage);			// 出力画像の保存
 	    
         double max = -1;
         
