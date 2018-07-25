@@ -61,6 +61,7 @@ public class NearestNeighbor1 implements LearningMachine{
         }
         return cls;
     }
+    
     /*
     //画像を読み込み配列を返す
     public static double[] Readimg(String img) { 

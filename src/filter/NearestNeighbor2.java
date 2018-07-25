@@ -32,7 +32,6 @@ public class NearestNeighbor2 {
         int size = dsts.size();
         Integer[] data=dsts.toArray(new Integer[size]);
         
-        
         //一番近いパターンを求める
         double mindist = Double.POSITIVE_INFINITY;
         for (Map.Entry<Integer, Integer[]> entry : patterns) {

@@ -781,7 +781,6 @@ public class Tracking extends JPanel {
 
 		if (capture.isOpened()) {
 			while (true) {
-
 				capture.read(webcam_image[0]);
 				if (!webcam_image[0].empty()) {
 					
