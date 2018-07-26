@@ -1,8 +1,5 @@
 package filter;
 
-
-import java.io.FileReader;
-import java.io.StreamTokenizer;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,15 +12,12 @@ public class NearestNeighbor2 {
 
 	List<Map.Entry<Integer, Integer[]>> patterns = 
             new ArrayList<Map.Entry<Integer, Integer[]>>();
-/*
-    public static void main(String[] args) {
-        new MachineLearning2(new NearestNeighbor());
-    }
-*/
+
+	
 	public void learn(int cls, ArrayList<Integer> data) {//最近傍法を行うためにサンプルを集める
 		int size = data.size();
 		Integer[] sample=data.toArray(new Integer[size]);
-        patterns.add(new AbstractMap.SimpleEntry(cls, sample));
+		patterns.add(new AbstractMap.SimpleEntry<Integer, Integer[]>(cls, sample));
     }
 
     public int trial(ArrayList<Integer> dsts) {//識別
@@ -44,14 +38,10 @@ public class NearestNeighbor2 {
             	length=ss.length;
             }
             
-            
             //データ間の距離を求める
             double dist = 0;
             for (int i = 0; i < length; ++i) {
                 dist += (ss[i] - data[i]) * (ss[i] - data[i]);
-                /*System.out.println("軌跡の距離を求めてる");
-                System.out.println(ss[i]);
-                System.out.println(data[i]);*/
             }
             
             if (mindist > dist) {
