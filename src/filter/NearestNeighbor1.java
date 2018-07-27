@@ -35,10 +35,6 @@ public class NearestNeighbor1 implements LearningMachine {
 			double dist = 0;
 			for (int i = 0; i < ss.length; ++i) {
 				dist += (ss[i] - data[i]) * (ss[i] - data[i]);
-				// デバッグ
-				System.out.println("データの距離を求めてる");
-				System.out.println(ss[i]);
-				System.out.println(data[i]);
 			}
 
 			if (mindist > dist) {

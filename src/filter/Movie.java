@@ -26,7 +26,7 @@ public class Movie extends JPanel {
 	private BufferedImage image;
 	static int m_width;// 処理するイメージの大きさ
 	static int m_height;
-	static CreateFilter m_filter;// CreateFilterクラスのインスタンス
+	CreateFilter m_filter;// CreateFilterクラスのインスタンス
 	ArrayList<Mat> m_input;// 初期フィルタ作成用画像例
 	Mat[] m_filterFourier;// フィルタの分母、分子、初期フィルタ
 	Mat[] m_updatefilter;// フィルタ更新のための分母、分子、フィルタ
@@ -381,12 +381,6 @@ public class Movie extends JPanel {
 
 		xy = max(output);
 		
-		/*if((xy_old[0]-xy[0])>(m_height/2) || (xy[0]-xy_old[0])>(m_height/2) || (xy_old[1]-xy[1])>(m_width/2) || (xy[1]-xy_old[1])>(m_width/2) ) {
-			xy = xy_old;
-		}else {
-			xy_old = xy;
-		}*/
-
 		//デバッグ
 		Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/tracking/"+Integer.valueOf(count1)+".jpg", output[0]);
 		
@@ -420,8 +414,8 @@ public class Movie extends JPanel {
 	}
 
 	public static void main(String arg[]) {
-		m_width = 216;
-		m_height = 384;
+		m_width = 432;
+		m_height = 768;
 		int count = 0;
 
 		// Load the native library.
@@ -459,7 +453,7 @@ public class Movie extends JPanel {
 				if (!webcam_image[0].empty()) {
 					// 元々0.3で、0.6で大体画面いっぱい
 					Imgproc.resize(webcam_image[0], webcam_image[0],
-							new Size(webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
+							new Size(webcam_image[0].size().width * 0.6, webcam_image[0].size().height * 0.6));
 					frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
 					if (count < 300) {// 初期フィルタを作成するための入力画像を得る
 						data[count] = Mat.zeros(m_width, m_height, CvType.CV_64FC3);
@@ -473,6 +467,18 @@ public class Movie extends JPanel {
 								movie.makeFilter(movie.m_input);// クラス変数m_filterFourierに分母、分子、フィルタを格納
 								//movie.new_makeFilter(m_filterFourier, webcam_image);
 								System.out.println("filter create!!");
+								
+								
+								/*System.out.println(movie.m_filterFourier[2].type());
+								double[] data2 = new double[2];
+								for (int i = 0; i < m_width; i++) {
+									for (int j = 0; j < m_height; j++) {
+										data2 =  movie.m_filterFourier[2].get(i, j);
+										System.out.println(data2[0]);
+										System.out.println(data2[1]);
+									}
+								}*/
+								
 							} else {
 								// フィルタを更新
 								//movie.new_makeFilter(m_updatefilter, webcam_image);
