@@ -116,7 +116,7 @@ public class CreateFilter {
 
 		result[2] = Mat.zeros(width, height, CvType.CV_64FC2);// フィルタ
 		
-		//add(result1,0.0000000001,result1_new);
+		add(result1,0.000000000001,result1_new);
 
 		Core.divide(result2, result1, result[2]);
 		//result[2].convertTo(result[2], CvType.CV_64FC2);
@@ -184,7 +184,7 @@ public class CreateFilter {
 		Core.add(output_result, result[1], Aia);// 分子
 		Core.add(input_result, result[0], Bia);// 分母
 
-		//add(Bia,0.0000000001,Bia_new);
+		add(Bia,0.000000000001,Bia_new);
 		
 		Core.divide(Aia, Bia, result_filter);
 

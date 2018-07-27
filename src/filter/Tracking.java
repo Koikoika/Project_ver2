@@ -27,15 +27,15 @@ public class Tracking extends JPanel {
 	// Movieクラスのインスタンス化
 	static int m_width;
 	static int m_height;
-	static Movie m_movie;
+	Movie m_movie;
 
 	// 座標をユーザーごとに保存
-	static ArrayList<Integer> dst1;
-	static ArrayList<Integer> dst2;
-	static ArrayList<Integer> dst3;
-	static ArrayList<Integer> src;
+	ArrayList<Integer> dst1;
+	ArrayList<Integer> dst2;
+	ArrayList<Integer> dst3;
+	ArrayList<Integer> src;
 
-	static // 初期フィルタ
+	// 初期フィルタ
 	Mat user1;
 	Mat user2;
 	Mat user3;
@@ -62,10 +62,6 @@ public class Tracking extends JPanel {
 		return image;
 	}
 
-	/*
-	 * private void setimage(BufferedImage newimage) { image = newimage; return; }
-	 */
-
 	/**
 	 * Converts/writes a Mat into a BufferedImage.
 	 * 
@@ -73,6 +69,8 @@ public class Tracking extends JPanel {
 	 *            Mat of type CV_8UC3 or CV_8UC1
 	 * @return BufferedImage of type TYPE_3BYTE_BGR or TYPE_BYTE_GRAY
 	 */
+	
+	//Mat型の画像をBufferedImage型にする
 	public static BufferedImage matToBufferedImage(Mat matrix) {
 		int cols = matrix.cols();
 		int rows = matrix.rows();
@@ -137,6 +135,7 @@ public class Tracking extends JPanel {
 		return img2;
 	}
 
+	//ファイルが存在するかどうか確認する
 	private static boolean checkBeforeWritefile(File file) {
 		if (file.exists()) {
 			if (file.isFile() && file.canWrite()) {
@@ -148,19 +147,16 @@ public class Tracking extends JPanel {
 
 	static int cnt = 0;
 
-	// ユーザーの番号
-	// static int usernum=0;
-
 	// 画像読み込み
 	public static double[] Readimg(String img) {
 
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		// 画像の読み込み (第二引数を0にするとグレースケールで読み込み)
-		Mat im = Imgcodecs.imread(img, 0); // 入力画像の取得
+		// 画像の読み込み
+		Mat im = Imgcodecs.imread(img,1); // 入力画像の取得
 
 		int cols = im.cols();
 		int rows = im.rows();
-		int size = cols * rows;
+		int size = cols * rows*3;
 		double[] data = new double[size];
 
 		int y;
@@ -173,31 +169,28 @@ public class Tracking extends JPanel {
 			// cols(列)の数だけ読み込む
 			for (x = 0; x < cols; x++) {
 				double[] d = im.get(y, x);
-				data[count] = d[0];
-				// System.out.println(data[count]);
-				count++;
+				data[count++] = d[0];
+				data[count++] = d[1];
+				data[count++] = d[2];
 
 			}
 		}
 		return data;
 	}
 
-	// 2チャンネルのMatの要素をテキストファイルに読み込む
+	// 2チャンネルのMatの要素をテキストファイルに読み込む(初期フィルタをテキストファイルに保存)
 	public void initial_filter_write(int user, Mat src) throws IOException {
 		// 保存するファイル先を記入
+		double[] data = new double[2];
 		try {
-			File file = new File(
-					"/Users/Karin.T/Documents/3pro/project_c/user" + String.valueOf(user) + "/initial_filter.txt");
+			File file = new File("/Users/Karin.T/Documents/3pro/project_c/user" + String.valueOf(user) + "/initial_filter.txt");
+
 			if (checkBeforeWritefile(file)) {
-				FileWriter filewriter = new FileWriter(file);
-				double[] data = new double[2];
-
-				// src.width()を書き込む
+				FileWriter filewriter = new FileWriter(file, true);
+				
 				filewriter.write(src.width() + "\n");
-				// src.height()を書き込む
 				filewriter.write(src.height() + "\n");
-
-				// 各チャンネルのdata
+				
 				for (int i = 0; i < src.width(); i++) {
 					for (int j = 0; j < src.height(); j++) {
 						data = src.get(j, i);
@@ -205,6 +198,7 @@ public class Tracking extends JPanel {
 						filewriter.write(data[1] + "\n");
 					}
 				}
+				
 				filewriter.close();
 			} else {
 				System.out.println("ファイルに書き込めません");
@@ -212,30 +206,13 @@ public class Tracking extends JPanel {
 		} catch (IOException e) {
 			System.out.println(e);
 		}
-
 	}
 
-	public Mat initial_filter_read(int user, Mat dst) {
-		// 読み込むファイル先を記入(ユーザーごとに分ける)
-		double[] data;
-		// dstを一応初期化
-		// src.width()を読み込む
-		// src.height()を読み込む
-		// for (int i = 0; i < 読み込んだ width; i++) {
-		// for (int j = 0; j < 読み込んだ height; j++) {
-		// data = new double[2];
-		// data[0] 読み込む
-		// data[1] 読み込む
-		// dst。put(j,i,data)
-		// }
-		// }
-		return dst;
-	}
 
 	public static void main(String arg[]) {
 		// Load the native library.
-		m_width = 432;
-		m_height = 768;
+		m_width = 324;
+		m_height = 576;
 
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		JFrame frame = new JFrame("Unlocking System");
@@ -253,12 +230,22 @@ public class Tracking extends JPanel {
 
 		NearestNeighbor1 nearestNeighbor1 = new NearestNeighbor1();
 		NearestNeighbor2 nearestNeighbor2 = new NearestNeighbor2();
-		// nearestNeighbor1.learn(4,
-		// Readimg("/Users/kannomaki/Documents/3pro/prj/def/phone.png"));
-
-		BufferedImage img;
-		BufferedImage imgRev;
-
+		
+		
+		for(int i=3;i<6;i++) {
+		nearestNeighbor1.learn(1,
+				Readimg("/Users/Karin.T/Documents/3pro/project_c/user1/input/trim"+String.valueOf(i)+".jpg"));
+		nearestNeighbor1.learn(2,
+				Readimg("/Users/Karin.T/Documents/3pro/project_c/user2/input/trim"+String.valueOf(i)+".jpg"));
+		nearestNeighbor1.learn(3,
+				Readimg("/Users/Karin.T/Documents/3pro/project_c/user3/input/trim"+String.valueOf(i)+".jpg"));
+		nearestNeighbor1.learn(4,
+				Readimg("/Users/Karin.T/Documents/3pro/project_c/other/1/trim"+String.valueOf(i)+".jpg"));
+		nearestNeighbor1.learn(5,
+				Readimg("/Users/Karin.T/Documents/3pro/project_c/other/2/trim"+String.valueOf(i)+".jpg"));
+		
+		}
+		
 		VideoCapture capture = new VideoCapture(0);
 		JButton button1 = new JButton("user1");
 		JButton button2 = new JButton("user2");
@@ -269,9 +256,6 @@ public class Tracking extends JPanel {
 		Tracking tracking = new Tracking();
 		ArrayList<Mat> input = new ArrayList<Mat>();
 
-		// K最近傍法による比較に使用
-		int ansnum = 0;
-
 		frame.add(button1);
 		frame.add(button2);
 		frame.add(button3);
@@ -281,21 +265,18 @@ public class Tracking extends JPanel {
 
 		button1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
-				JLabel msg = new JLabel("user1の物体の登録を開始します。(15秒間)");
+				JLabel msg = new JLabel("user1の物体の登録を開始します(15秒間)。黒枠の中に物体を入れてください");
 				JOptionPane.showMessageDialog(frame, msg);
 
 				if (capture.isOpened()) {
 
 					Timer timer = new Timer(false);
+					
+					Timer timer2 = new Timer(false);
 
 					TimerTask task = new TimerTask() {
 
-						// ファイル書き込み
-						File file = new File("/Users/Karin.T/Documents/3pro/project_c/user1/track1.txt");
-						FileWriter filewriter;
-
 						int[] answer = new int[2];
-						// int miss = 0;//3回間違えた場合は最初からやり直す
 
 						BufferedImage img;
 						BufferedImage imgRev; // 反転したイメージ
@@ -304,8 +285,9 @@ public class Tracking extends JPanel {
 						public void run() {
 
 							capture.read(webcam_image[0]);
+							
 							Imgproc.resize(webcam_image[0], webcam_image[0],
-									new Size(webcam_image[0].size().width * 0.4, webcam_image[0].size().height * 0.4));
+									new Size(webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
 							frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
 
 							if (cnt < 13) {
@@ -314,101 +296,60 @@ public class Tracking extends JPanel {
 								if (webcam_image[0].size().width != m_width
 										|| webcam_image[0].size().height != m_height) {
 									Imgproc.resize(webcam_image[0], webcam_image[0], new Size(
-											webcam_image[0].size().width * 0.4, webcam_image[0].size().height * 0.4));
+											webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
 								}
 								input.add(webcam_image[0]);
 
 								System.out.println("initial filter create....");
-								// movie.get_filter_original(data1);
 							} else if (cnt == 13) {
 								try {
 									// クラス変数m_filterFourierに分母、分子、フィルタを格納
 									tracking.m_movie.makeFilter(input);
 								} catch (IOException e) {
-									// TODO 自動生成された catch ブロック
 									e.printStackTrace();
 								}
-
+								for(int i=3; i<6;i++) {
 								// 赤枠内の画像をトリミングして保存
 								Rect roi = new Rect(m_height / 2 - m_width / 4, m_width / 2 - m_width / 4, m_width / 2,
 										m_width / 2);
-								Mat trim3 = new Mat(input.get(4), roi);
+								Mat trim3 = new Mat(input.get(i), roi);
 
-								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user1/input/trim1.jpg",
+								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user1/input/trim"+String.valueOf(i)+".jpg",
 										trim3);
-
+								
 								// 保存した画像を学習させる
 								nearestNeighbor1.learn(1,
-										Readimg("/Users/Karin.T/Documents/3pro/project_c/user1/input/trim1.jpg"));
-
-								// デバッグ
-								// System.out.println("学習させました");
-
+										Readimg("/Users/Karin.T/Documents/3pro/project_c/user1/input/trim"+String.valueOf(i)+".jpg"));
+								}
+								
+								//初期フィルタを保存
 								tracking.user1 = tracking.m_movie.m_filterFourier[2].clone();
+								
 								// テキストファイルに保存
 								try {
-									tracking.initial_filter_write(3, tracking.m_movie.m_filterFourier[2]);
+									tracking.initial_filter_write(1, tracking.m_movie.m_filterFourier[2]);
 								} catch (IOException e1) {
-									// TODO 自動生成された catch ブロック
 									e1.printStackTrace();
 								}
+								
 								System.out.println("filter create!!");
-
-								// デバッグ用
-
-								// 入力画像をフーリエ変換しやすいように変換後、フーリエ変換
-								Mat[] input = new Mat[1];
-								webcam_image[0].convertTo(webcam_image[0], CvType.CV_32FC3);
-								input[0] = Mat.zeros(m_width, m_height, CvType.CV_32FC3);
-								input[0] = webcam_image[0].clone();
-
-								Mat[] ans_input = new Mat[1];
-								ans_input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
-
-								Mat output = Mat.zeros(m_width, m_height, CvType.CV_32FC3);
-								try {
-									m_movie.m_filter.toFourier(input, ans_input);
-								} catch (IOException e) {
-									// TODO 自動生成された catch ブロック
-									e.printStackTrace();
-								}
-
-								ArrayList<Mat> planes2 = new ArrayList<Mat>();
-								Mat output3 = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
-
-								m_movie.m_filterFourier[2].convertTo(m_movie.m_filterFourier[2], CvType.CV_64F);
-								Core.mulSpectrums(ans_input[0], tracking.m_movie.m_filterFourier[2], output3, 0);
-
-								Core.idft(output3, output3);
-								Mat restoredImage = Mat.zeros(m_width, m_height, CvType.CV_64FC1);// 0で初期化
-								Core.split(output3, planes2);
-								Core.normalize(planes2.get(0), restoredImage, 0, 255, Core.NORM_MINMAX);
-
-								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user3/debug.jpg",
-										restoredImage);
-								System.out.println("done!");
-
-								// デバッグ終了→少しぼけているけど中心に一番反応している
 
 								JLabel end = new JLabel("次に物体の軌跡の登録をします(10秒)");
 								JOptionPane.showMessageDialog(frame, end);
 
 							} else if (cnt > 13 && cnt < 34) {
 								try {
-									answer = tracking.m_movie.tracking(webcam_image, m_movie.m_filterFourier);
+									answer = tracking.m_movie.tracking(webcam_image, tracking.m_movie.m_filterFourier);
 								} catch (IOException e) {
-									// TODO 自動生成された catch ブロック
 									e.printStackTrace();
 								}
-								// tracking.m_movie.drawsquare(webcam_image, answer[1], answer[0], m_width / 2,
-								// m_width / 2);
+								
 								// 保存
-
 								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user1/tracking/"
 										+ String.valueOf(cnt) + ".png", webcam_image[0]);
 
-								dst1.add(answer[0]);
-								dst1.add(answer[1]);
+								tracking.dst1.add(answer[0]);
+								tracking.dst1.add(answer[1]);
 
 								try {
 									File file = new File("/Users/Karin.T/Documents/3pro/project_c/user1/track1.txt");
@@ -433,8 +374,19 @@ public class Tracking extends JPanel {
 
 							} else if (cnt == 34) {
 								timer.cancel();
+								timer2.cancel();
+								
 								cnt = 0;
 
+								int[] data1 = new int[tracking.dst1.size()];
+								
+								for(int i=0; i<tracking.dst1.size();i++) {
+									data1[i] = tracking.dst1.get(i);
+								}
+								
+								//軌道を学習する
+								nearestNeighbor2.learn(1, data1);
+								
 								// 登録完了
 								JLabel end = new JLabel("登録完了");
 								JOptionPane.showMessageDialog(frame, end);
@@ -449,9 +401,8 @@ public class Tracking extends JPanel {
 
 						}
 					};
-					timer.schedule(task, 0, 700);
+					timer.schedule(task, 0, 500);
 
-					Timer timer2 = new Timer(false);
 
 					TimerTask task2 = new TimerTask() {
 						BufferedImage img;
@@ -459,18 +410,18 @@ public class Tracking extends JPanel {
 
 						public void run() {
 							if (capture.isOpened()) {
+								
 
 								capture.read(webcam_image[0]);
 								if (!webcam_image[0].empty()) {
 
-									// 元々0.3で、0.6で大体画面いっぱい
 									Imgproc.resize(webcam_image[0], webcam_image[0], new Size(
-											webcam_image[0].size().width * 0.4, webcam_image[0].size().height * 0.4));
+											webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
 									frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
 
 									webcam_image2[0] = webcam_image[0].clone();
 									// 四角描写
-									m_movie.drawsquare(webcam_image2, webcam_image2[0].width() / 2,
+									tracking.m_movie.drawsquare(webcam_image2, webcam_image2[0].width() / 2,
 											webcam_image2[0].height() / 2, m_width / 2, m_width / 2);
 									img = matToBufferedImage(webcam_image2[0]);
 									imgRev = createMirrorImage(img);// matからイメージに変換してから反転させる
@@ -484,33 +435,32 @@ public class Tracking extends JPanel {
 						}
 
 					};
-					timer2.schedule(task2, 0, 700);
-					// ここで軌道を学習させる
+					timer2.schedule(task2, 0, 500);
 
-					nearestNeighbor2.learn(1, dst1);
+					
 				} else {
 					System.out.println(" --(!) No captured frame -- ");
 				}
 			}
 		});
+		
 
 		button2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
-				JLabel msg = new JLabel("user2の物体の登録を開始します。(15秒間)");
+				JLabel msg = new JLabel("user2の物体の登録を開始します(15秒間)。黒枠の中に物体を入れてください");
 				JOptionPane.showMessageDialog(frame, msg);
 
 				if (capture.isOpened()) {
+					
+					cnt = 0;
 
 					Timer timer = new Timer(false);
+					Timer timer2 = new Timer(false);
 
 					TimerTask task = new TimerTask() {
 
-						// ファイル書き込み
-						File file = new File("/Users/Karin.T/Documents/3pro/project_c/user2/track2.txt");
-						FileWriter filewriter;
-
+						
 						int[] answer = new int[2];
-						// int miss = 0;//3回間違えた場合は最初からやり直す
 
 						BufferedImage img;
 						BufferedImage imgRev; // 反転したイメージ
@@ -520,7 +470,7 @@ public class Tracking extends JPanel {
 
 							capture.read(webcam_image[0]);
 							Imgproc.resize(webcam_image[0], webcam_image[0],
-									new Size(webcam_image[0].size().width * 0.4, webcam_image[0].size().height * 0.4));
+									new Size(webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
 							frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
 
 							if (cnt < 13) {
@@ -529,7 +479,7 @@ public class Tracking extends JPanel {
 								if (webcam_image[0].size().width != m_width
 										|| webcam_image[0].size().height != m_height) {
 									Imgproc.resize(webcam_image[0], webcam_image[0], new Size(
-											webcam_image[0].size().width * 0.4, webcam_image[0].size().height * 0.4));
+											webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
 								}
 								input.add(webcam_image[0]);
 
@@ -540,90 +490,47 @@ public class Tracking extends JPanel {
 									// クラス変数m_filterFourierに分母、分子、フィルタを格納
 									tracking.m_movie.makeFilter(input);
 								} catch (IOException e) {
-									// TODO 自動生成された catch ブロック
 									e.printStackTrace();
 								}
-
+								for(int i=3;i<6;i++) {
 								// 赤枠内の画像をトリミングして保存
 								Rect roi = new Rect(m_height / 2 - m_width / 4, m_width / 2 - m_width / 4, m_width / 2,
 										m_width / 2);
-								Mat trim3 = new Mat(input.get(4), roi);
+								Mat trim3 = new Mat(input.get(i), roi);
 
-								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user2/input/trim2.jpg",
+								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user2/input/trim"+String.valueOf(i)+".jpg",
 										trim3);
 
 								// 保存した画像を学習させる
-								nearestNeighbor1.learn(3,
-										Readimg("/Users/Karin.T/Documents/3pro/project_c/user2/input/trim2.jpg"));
+								nearestNeighbor1.learn(2,
+										Readimg("/Users/Karin.T/Documents/3pro/project_c/user2/input/trim"+String.valueOf(i)+".jpg"));
+								}
 
-								// デバッグ
-								// System.out.println("学習させました");
-
-								tracking.user3 = tracking.m_movie.m_filterFourier[2].clone();
+								tracking.user2 = tracking.m_movie.m_filterFourier[2].clone();
 								// テキストファイルに保存
 								try {
-									tracking.initial_filter_write(3, tracking.m_movie.m_filterFourier[2]);
+									tracking.initial_filter_write(2, tracking.m_movie.m_filterFourier[2]);
 								} catch (IOException e1) {
-									// TODO 自動生成された catch ブロック
 									e1.printStackTrace();
 								}
 								System.out.println("filter create!!");
-
-								// デバッグ用
-
-								// 入力画像をフーリエ変換しやすいように変換後、フーリエ変換
-								Mat[] input = new Mat[1];
-								webcam_image[0].convertTo(webcam_image[0], CvType.CV_32FC3);
-								input[0] = Mat.zeros(m_width, m_height, CvType.CV_32FC3);
-								input[0] = webcam_image[0].clone();
-
-								Mat[] ans_input = new Mat[1];
-								ans_input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
-
-								Mat output = Mat.zeros(m_width, m_height, CvType.CV_32FC3);
-								try {
-									m_movie.m_filter.toFourier(input, ans_input);
-								} catch (IOException e) {
-									// TODO 自動生成された catch ブロック
-									e.printStackTrace();
-								}
-
-								ArrayList<Mat> planes2 = new ArrayList<Mat>();
-								Mat output3 = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
-
-								m_movie.m_filterFourier[2].convertTo(m_movie.m_filterFourier[2], CvType.CV_64F);
-								Core.mulSpectrums(ans_input[0], tracking.m_movie.m_filterFourier[2], output3, 0);
-
-								Core.idft(output3, output3);
-								Mat restoredImage = Mat.zeros(m_width, m_height, CvType.CV_64FC1);// 0で初期化
-								Core.split(output3, planes2);
-								Core.normalize(planes2.get(0), restoredImage, 0, 255, Core.NORM_MINMAX);
-
-								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user2/debug.jpg",
-										restoredImage);
-								System.out.println("done!");
-
-								// デバッグ終了→少しぼけているけど中心に一番反応している
 
 								JLabel end = new JLabel("次に物体の軌跡の登録をします(10秒)");
 								JOptionPane.showMessageDialog(frame, end);
 
 							} else if (cnt > 13 && cnt < 34) {
 								try {
-									answer = tracking.m_movie.tracking(webcam_image, m_movie.m_filterFourier);
+									answer = tracking.m_movie.tracking(webcam_image, tracking.m_movie.m_filterFourier);
 								} catch (IOException e) {
-									// TODO 自動生成された catch ブロック
 									e.printStackTrace();
 								}
-								// tracking.m_movie.drawsquare(webcam_image, answer[1], answer[0], m_width / 2,
-								// m_width / 2);
 								// 保存
 
 								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user2/tracking/"
 										+ String.valueOf(cnt) + ".png", webcam_image[0]);
 
-								dst2.add(answer[0]);
-								dst2.add(answer[1]);
+								tracking.dst2.add(answer[0]);
+								tracking.dst2.add(answer[1]);
 
 								try {
 									File file = new File("/Users/Karin.T/Documents/3pro/project_c/user2/track2.txt");
@@ -648,8 +555,17 @@ public class Tracking extends JPanel {
 
 							} else if (cnt == 34) {
 								timer.cancel();
+								timer2.cancel();
 								cnt = 0;
-
+								
+                                int[] data2 = new int[tracking.dst2.size()];
+								
+								for(int i=0; i<tracking.dst2.size();i++) {
+									data2[i] = tracking.dst2.get(i);
+								}
+								
+								nearestNeighbor2.learn(2, data2);
+								
 								// 登録完了
 								JLabel end = new JLabel("登録完了");
 								JOptionPane.showMessageDialog(frame, end);
@@ -664,9 +580,8 @@ public class Tracking extends JPanel {
 
 						}
 					};
-					timer.schedule(task, 0, 700);
+					timer.schedule(task, 0, 500);
 
-					Timer timer2 = new Timer(false);
 
 					TimerTask task2 = new TimerTask() {
 						BufferedImage img;
@@ -680,12 +595,12 @@ public class Tracking extends JPanel {
 
 									// 元々0.3で、0.6で大体画面いっぱい
 									Imgproc.resize(webcam_image[0], webcam_image[0], new Size(
-											webcam_image[0].size().width * 0.4, webcam_image[0].size().height * 0.4));
+											webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
 									frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
 
 									webcam_image2[0] = webcam_image[0].clone();
 									// 四角描写
-									m_movie.drawsquare(webcam_image2, webcam_image2[0].width() / 2,
+									tracking.m_movie.drawsquare(webcam_image2, webcam_image2[0].width() / 2,
 											webcam_image2[0].height() / 2, m_width / 2, m_width / 2);
 									img = matToBufferedImage(webcam_image2[0]);
 									imgRev = createMirrorImage(img);// matからイメージに変換してから反転させる
@@ -699,10 +614,10 @@ public class Tracking extends JPanel {
 						}
 
 					};
-					timer2.schedule(task2, 0, 700);
+					timer2.schedule(task2, 0, 500);
 					// ここで軌道を学習させる
 
-					nearestNeighbor2.learn(2, dst2);
+					
 				} else {
 					System.out.println(" --(!) No captured frame -- ");
 				}
@@ -711,31 +626,32 @@ public class Tracking extends JPanel {
 
 		button3.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
-				JLabel msg = new JLabel("user3の物体の登録を開始します。(15秒間)");
+				JLabel msg = new JLabel("user3の物体の登録を開始します(15秒間)。黒枠の中に物体を入れてください");
 				JOptionPane.showMessageDialog(frame, msg);
+				
 
 				if (capture.isOpened()) {
 
 					Timer timer = new Timer(false);
-
+					Timer timer2 = new Timer(false);
+					cnt = 0;
+					
 					TimerTask task = new TimerTask() {
 
-						// ファイル書き込み
-						File file = new File("/Users/Karin.T/Documents/3pro/project_c/user3/track3.txt");
-						FileWriter filewriter;
-
 						int[] answer = new int[2];
-						// int miss = 0;//3回間違えた場合は最初からやり直す
 
 						BufferedImage img;
 						BufferedImage imgRev; // 反転したイメージ
 
+						
 						@Override
 						public void run() {
+							
+							
 
 							capture.read(webcam_image[0]);
 							Imgproc.resize(webcam_image[0], webcam_image[0],
-									new Size(webcam_image[0].size().width * 0.4, webcam_image[0].size().height * 0.4));
+									new Size(webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
 							frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
 
 							if (cnt < 13) {
@@ -744,104 +660,62 @@ public class Tracking extends JPanel {
 								if (webcam_image[0].size().width != m_width
 										|| webcam_image[0].size().height != m_height) {
 									Imgproc.resize(webcam_image[0], webcam_image[0], new Size(
-											webcam_image[0].size().width * 0.4, webcam_image[0].size().height * 0.4));
+											webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
 								}
 								input.add(webcam_image[0]);
 
 								System.out.println("initial filter create....");
-								// movie.get_filter_original(data1);
+								
 							} else if (cnt == 13) {
 								try {
 									// クラス変数m_filterFourierに分母、分子、フィルタを格納
 									tracking.m_movie.makeFilter(input);
 								} catch (IOException e) {
-									// TODO 自動生成された catch ブロック
 									e.printStackTrace();
 								}
-
+								
+								for(int i=3;i<6;i++) {
 								// 赤枠内の画像をトリミングして保存
 								Rect roi = new Rect(m_height / 2 - m_width / 4, m_width / 2 - m_width / 4, m_width / 2,
 										m_width / 2);
-								Mat trim3 = new Mat(input.get(4), roi);
+								Mat trim3 = new Mat(input.get(i), roi);
 
-								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user3/input/trim3.jpg",
+								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user3/input/trim"+String.valueOf(i)+".jpg",
 										trim3);
 
 								// 保存した画像を学習させる
 								nearestNeighbor1.learn(3,
-										Readimg("/Users/Karin.T/Documents/3pro/project_c/user3/input/trim3.jpg"));
-
-								// デバッグ
-								// System.out.println("学習させました");
+										Readimg("/Users/Karin.T/Documents/3pro/project_c/user3/input/trim"+String.valueOf(i)+".jpg"));
+								}
 
 								tracking.user3 = tracking.m_movie.m_filterFourier[2].clone();
 								// テキストファイルに保存
 								try {
 									tracking.initial_filter_write(3, tracking.m_movie.m_filterFourier[2]);
 								} catch (IOException e1) {
-									// TODO 自動生成された catch ブロック
 									e1.printStackTrace();
 								}
 								System.out.println("filter create!!");
-
-								// デバッグ用
-
-								// 入力画像をフーリエ変換しやすいように変換後、フーリエ変換
-								Mat[] input = new Mat[1];
-								webcam_image[0].convertTo(webcam_image[0], CvType.CV_32FC3);
-								input[0] = Mat.zeros(m_width, m_height, CvType.CV_32FC3);
-								input[0] = webcam_image[0].clone();
-
-								Mat[] ans_input = new Mat[1];
-								ans_input[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
-
-								Mat output = Mat.zeros(m_width, m_height, CvType.CV_32FC3);
-								try {
-									m_movie.m_filter.toFourier(input, ans_input);
-								} catch (IOException e) {
-									// TODO 自動生成された catch ブロック
-									e.printStackTrace();
-								}
-
-								ArrayList<Mat> planes2 = new ArrayList<Mat>();
-								Mat output3 = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
-
-								m_movie.m_filterFourier[2].convertTo(m_movie.m_filterFourier[2], CvType.CV_64F);
-								Core.mulSpectrums(ans_input[0], tracking.m_movie.m_filterFourier[2], output3, 0);
-
-								Core.idft(output3, output3);
-								Mat restoredImage = Mat.zeros(m_width, m_height, CvType.CV_64FC1);// 0で初期化
-								Core.split(output3, planes2);
-								Core.normalize(planes2.get(0), restoredImage, 0, 255, Core.NORM_MINMAX);
-
-								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user3/debug.jpg",
-										restoredImage);
-								System.out.println("done!");
-
-								// デバッグ終了→少しぼけているけど中心に一番反応している
 
 								JLabel end = new JLabel("次に物体の軌跡の登録をします(10秒)");
 								JOptionPane.showMessageDialog(frame, end);
 
 							} else if (cnt > 13 && cnt < 34) {
 								try {
-									answer = tracking.m_movie.tracking(webcam_image, m_movie.m_filterFourier);
+									answer = tracking.m_movie.tracking(webcam_image, tracking.m_movie.m_filterFourier);
 								} catch (IOException e) {
-									// TODO 自動生成された catch ブロック
 									e.printStackTrace();
 								}
-								// tracking.m_movie.drawsquare(webcam_image, answer[1], answer[0], m_width / 2,
-								// m_width / 2);
 								// 保存
 
 								Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/user3/tracking/"
 										+ String.valueOf(cnt) + ".png", webcam_image[0]);
 
-								dst3.add(answer[0]);
-								dst3.add(answer[1]);
+								tracking.dst3.add(answer[0]);
+								tracking.dst3.add(answer[1]);
 
 								try {
-									File file = new File("/Users/Karin.T/Documents/3pro/project_c/user1/track1.txt");
+									File file = new File("/Users/Karin.T/Documents/3pro/project_c/user3/track3.txt");
 
 									if (checkBeforeWritefile(file)) {
 										FileWriter filewriter = new FileWriter(file, true);
@@ -863,6 +737,19 @@ public class Tracking extends JPanel {
 
 							} else if (cnt == 34) {
 								timer.cancel();
+								timer2.cancel();
+								
+								System.out.println(tracking.dst3);
+								
+								//軌道を学習
+                                int[] data3 = new int[tracking.dst3.size()];
+								
+								for(int i=0; i<tracking.dst3.size();i++) {
+									data3[i] = tracking.dst3.get(i);
+								}
+								
+								nearestNeighbor2.learn(3, data3);
+								
 								cnt = 0;
 
 								// 登録完了
@@ -879,9 +766,8 @@ public class Tracking extends JPanel {
 
 						}
 					};
-					timer.schedule(task, 0, 700);
+					timer.schedule(task, 0, 500);
 
-					Timer timer2 = new Timer(false);
 
 					TimerTask task2 = new TimerTask() {
 						BufferedImage img;
@@ -895,12 +781,12 @@ public class Tracking extends JPanel {
 
 									// 元々0.3で、0.6で大体画面いっぱい
 									Imgproc.resize(webcam_image[0], webcam_image[0], new Size(
-											webcam_image[0].size().width * 0.4, webcam_image[0].size().height * 0.4));
+											webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
 									frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
 
 									webcam_image2[0] = webcam_image[0].clone();
 									// 四角描写
-									m_movie.drawsquare(webcam_image2, webcam_image2[0].width() / 2,
+									tracking.m_movie.drawsquare(webcam_image2, webcam_image2[0].width() / 2,
 											webcam_image2[0].height() / 2, m_width / 2, m_width / 2);
 									img = matToBufferedImage(webcam_image2[0]);
 									imgRev = createMirrorImage(img);// matからイメージに変換してから反転させる
@@ -914,10 +800,8 @@ public class Tracking extends JPanel {
 						}
 
 					};
-					timer2.schedule(task2, 0, 700);
-					// ここで軌道を学習させる
-
-					nearestNeighbor2.learn(3, dst3);
+					timer2.schedule(task2, 0, 500);
+					
 				} else {
 					System.out.println(" --(!) No captured frame -- ");
 				}
@@ -927,20 +811,25 @@ public class Tracking extends JPanel {
 		open.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
 
-				JLabel msg = new JLabel("物体認証を開始します(3秒)");
+				JLabel msg = new JLabel("物体認証を開始します(3秒)。黒枠の中に物体を入れてください");
 				JOptionPane.showMessageDialog(frame, msg);
 
 				Mat[] filter = new Mat[3];
 
 				Timer timer = new Timer(false);
+				Timer timer2 = new Timer(false);
+				
 				TimerTask task = new TimerTask() {
 					int cnt = 1;
 
+					int ansnum = 0;
+					int ansnum2 = 0;
+					
 					@Override
 					public void run() {
 						int[] answer = new int[2];
 
-						if (cnt < 4) {
+						if (cnt>1 && cnt < 7) {
 							// 最初に3枚画像をとる
 							Imgcodecs.imwrite(
 									"/Users/Karin.T/Documents/3pro/project_c/open/" + String.valueOf(cnt) + ".png",
@@ -951,14 +840,11 @@ public class Tracking extends JPanel {
 							Mat trim = new Mat(webcam_image[0], roi);
 							Imgcodecs.imwrite("/Users/Karin.T/Documents/3pro/project_c/open/trim.jpg", trim);
 
-						} else if (cnt == 4) {
+						} else if (cnt == 7) {
 							// 物体認証
 							// ここで保存されている画像と入力画像のRGB値を比較
 							String openimg = "/Users/Karin.T/Documents/3pro/project_c/open/trim.jpg";
-							int ansnum = nearestNeighbor1.trial(Readimg(openimg));
-
-							// デバッグ
-							System.out.println(ansnum);
+							ansnum = nearestNeighbor1.trial(Readimg(openimg));
 
 							if (ansnum == 1 || ansnum == 2 || ansnum == 3) {
 								JLabel end = new JLabel(
@@ -973,53 +859,64 @@ public class Tracking extends JPanel {
 								cnt = 1;
 							}
 
-						} else if (cnt > 4 && cnt < 25) {
+						} else if (cnt > 7 && cnt < 28) {
 							// 動作認証（ここではトラッキングをして座標を取得）
 							try {
-								// if文でどのフィルターをcloneするか分ける（今はuser1）
+								filter[0] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
+								filter[1] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
 								filter[2] = Mat.zeros(m_width, m_height, CvType.CV_64FC2);
+								
 								if (ansnum == 1) {
-									filter[2] = user1.clone();
+									filter[2] = tracking.user1.clone();
 								} else if (ansnum == 2) {
 									filter[2] = tracking.user2.clone();
 								} else {// 3のみ
 									filter[2] = tracking.user3.clone();
 								}
+								
 								answer = tracking.m_movie.tracking(webcam_image, filter);
 
-								// 四角描写
-								// tracking.m_movie.drawsquare(webcam_image, answer[1], answer[0], m_width / 2,
-								// m_width / 2);
+								tracking.src.add(answer[0]);
+								tracking.src.add(answer[1]);
 
-								src.add(answer[0]);
-								src.add(answer[1]);
-
-								System.out.println(answer[0]);
-								System.out.println(answer[1]);
+								System.out.println("x="+answer[0]);
+								System.out.println("y="+answer[1]);
 
 							} catch (IOException e) {
-								// TODO 自動生成された catch ブロック
 								e.printStackTrace();
 							}
 
-						} else if (cnt == 25) {
-							// ここで登録した軌跡と、今回とった軌跡を比較.
-							int ansnum2 = nearestNeighbor2.trial(src);
-							System.out.println(ansnum2);
-
+						} else if (cnt == 28) {
+							// 登録した軌跡と、今回とった軌跡を比較.
+							System.out.println(tracking.src);
+							
+                            int[] src = new int[tracking.src.size()];
+							
+							for(int i=0; i<tracking.src.size();i++) {
+								src[i] = tracking.src.get(i);
+							}
+							
+							ansnum2 = nearestNeighbor2.trial(src);
+							
+							System.out.println("軌跡　"+ansnum2);
+							
 							// trueの場合
-							if (ansnum2 != 0) {
+							if (ansnum2 == ansnum) {
+	
 								JLabel end = new JLabel("動作認証に成功しました。ロックを解除します");
 								JOptionPane.showMessageDialog(frame, end);
+								
 							} else {
-								// falseの場合、「やり直してください」と出力してcntを5に設定し直して軌跡を取り直す
+								// falseの場合、「やり直してください」と出力してcntを8に設定し直して軌跡を取り直す
 								JLabel end = new JLabel("やり直してください");
 								JOptionPane.showMessageDialog(frame, end);
-								cnt = 5;
+								cnt = 8;
 							}
-						} else if (cnt > 25) {
+						} else if (cnt > 28) {
 							// タイマー停止。解除終了
 							timer.cancel();
+							timer2.cancel();
+							
 							System.out.println("OPEN!!");
 						}
 
@@ -1027,28 +924,44 @@ public class Tracking extends JPanel {
 						cnt++;
 					}
 				};
-				timer.schedule(task, 0, 700);
+				timer.schedule(task, 0, 500);
+				
+
+				TimerTask task2 = new TimerTask() {
+					BufferedImage img;
+					BufferedImage imgRev;
+
+					public void run() {
+						if (capture.isOpened()) {
+
+							capture.read(webcam_image[0]);
+							if (!webcam_image[0].empty()) {
+
+								// 元々0.3で、0.6で大体画面いっぱい
+								Imgproc.resize(webcam_image[0], webcam_image[0], new Size(
+										webcam_image[0].size().width * 0.3, webcam_image[0].size().height * 0.3));
+								frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() + 60);
+
+								webcam_image2[0] = webcam_image[0].clone();
+								// 四角描写
+								tracking.m_movie.drawsquare(webcam_image2, webcam_image2[0].width() / 2,
+										webcam_image2[0].height() / 2, m_width / 2, m_width / 2);
+								img = matToBufferedImage(webcam_image2[0]);
+								imgRev = createMirrorImage(img);// matからイメージに変換してから反転させる
+								panel.setimage(imgRev);
+								panel.repaint();
+
+							} else {
+								System.out.println(" --(!) No captured frame -- ");
+							}
+						}
+					}
+
+				};
+				timer2.schedule(task2, 0, 500);
 			}
 		});
-
-		/*
-		 * if (capture.isOpened()) { while (true) { capture.read(webcam_image[0]); if
-		 * (!webcam_image[0].empty()) {
-		 * 
-		 * // 元々0.3で、0.6で大体画面いっぱい Imgproc.resize(webcam_image[0], webcam_image[0], new
-		 * Size(webcam_image[0].size().width * 0.4, webcam_image[0].size().height *
-		 * 0.4)); frame.setSize(webcam_image[0].width() + 40, webcam_image[0].height() +
-		 * 60);
-		 * 
-		 * webcam_image2[0] = webcam_image[0].clone(); // 四角描写
-		 * m_movie.drawsquare(webcam_image2, webcam_image2[0].width() / 2,
-		 * webcam_image2[0].height() / 2, m_width / 2, m_width / 2); img =
-		 * matToBufferedImage(webcam_image2[0]); imgRev = createMirrorImage(img);//
-		 * matからイメージに変換してから反転させる panel.setimage(imgRev); panel.repaint();
-		 * 
-		 * } else { System.out.println(" --(!) No captured frame -- "); } } }
-		 */
-
+		
 		return;
 	}
 }
